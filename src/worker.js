@@ -21,6 +21,7 @@ import {
   updateSaturday,
   deleteSaturday,
   resetAssignments,
+  clearAllSaturdays,
 } from "./db.js";
 
 export default {
@@ -85,11 +86,16 @@ async function handleApi(request, env, url) {
   if (pathname === "/api/claim" && method === "POST") {
     if (!(await hasFamilyAccess(request, env))) return json({ error: "unauthorized" }, 401);
     const body = await safeJson(request);
-    const res = await claimSlot(env.DB, {
-      saturdayId: Number(body.saturdayId),
-      slot: Number(body.slot),
-      familyId: Number(body.familyId),
-    });
+    const isAdmin = await hasAdminAccess(request, env);
+    const res = await claimSlot(
+      env.DB,
+      {
+        saturdayId: Number(body.saturdayId),
+        slot: Number(body.slot),
+        familyId: Number(body.familyId),
+      },
+      { isAdmin },
+    );
     if (res.error) return json(res, statusForError(res.error));
     return json(res);
   }
@@ -153,6 +159,11 @@ async function handleApi(request, env, url) {
 
     if (pathname === "/api/admin/reset" && method === "POST") {
       const res = await resetAssignments(env.DB);
+      return json(res);
+    }
+
+    if (pathname === "/api/admin/clear-saturdays" && method === "POST") {
+      const res = await clearAllSaturdays(env.DB);
       return json(res);
     }
   }

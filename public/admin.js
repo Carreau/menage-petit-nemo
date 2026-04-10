@@ -325,7 +325,10 @@ function renderDangerTab() {
   return `
     <div class="card">
       <h2 data-i18n="tab_danger"></h2>
-      <button class="danger" id="resetBtn" data-i18n="danger_reset"></button>
+      <div class="row" style="justify-content:flex-start; gap:12px">
+        <button class="danger" id="resetBtn" data-i18n="danger_reset"></button>
+        <button class="danger" id="clearSatBtn" data-i18n="danger_clear_saturdays"></button>
+      </div>
     </div>
   `;
 }
@@ -334,6 +337,12 @@ function wireDangerTab() {
   document.getElementById("resetBtn").addEventListener("click", async () => {
     if (!confirm(t("danger_reset_confirm"))) return;
     const res = await api("/api/admin/reset", { method: "POST" });
+    if (!res.ok) return alert(t("err_generic"));
+    await loadState();
+  });
+  document.getElementById("clearSatBtn").addEventListener("click", async () => {
+    if (!confirm(t("danger_clear_saturdays_confirm"))) return;
+    const res = await api("/api/admin/clear-saturdays", { method: "POST" });
     if (!res.ok) return alert(t("err_generic"));
     await loadState();
   });

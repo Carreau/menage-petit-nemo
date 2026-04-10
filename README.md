@@ -95,15 +95,21 @@ in with `FAMILY_PASSWORD`, and you should see an empty schedule. Visit
 - [ ] A family that has reached its quota can STILL claim more slots
       (quota is informational — an info banner appears above the schedule)
 - [ ] Releasing a slot frees it
-- [ ] On an owned future slot, the 📅 button downloads an .ics with two
-      all-day events: the Saturday cleaning and a Friday key-pickup reminder
+- [ ] On an owned future slot, an explicit "📅 Add to calendar" button
+      sits below the family name and downloads an .ics with:
+      the Saturday cleaning 09:00–12:00 and a Friday key-pickup 16:00–18:00
 - [ ] × release button only appears on the current family's own slots
 - [ ] Server rejects a release for another family (admin cookie bypasses)
-- [ ] Past Saturdays show no claim/release buttons, server rejects edits
+- [ ] Past Saturdays show no claim/release buttons for regular families,
+      and the server rejects their edits
+- [ ] Logged in as admin, past Saturdays show claim/release buttons, and
+      claiming an empty past slot opens a family picker
 - [ ] Generating a Saturday with today's date in the past (back-test) renders as locked
 - [ ] Language toggle swaps FR ↔ EN everywhere
 - [ ] Marking a Saturday **closed** removes its slots from the count
 - [ ] Reset (danger zone) clears all assignments
+- [ ] Clear all Saturdays (danger zone) deletes every Saturday and its
+      assignments; families are kept
 
 ## Deploying to Cloudflare
 
