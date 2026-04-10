@@ -164,9 +164,11 @@ function render() {
   const fam = currentFamily();
   const banner =
     fam && fam.used >= fam.quota
-      ? `<div class="error" style="margin-bottom:10px">${t(
-          "quota_full_banner",
+      ? `<div class="badge" style="display:block;margin-bottom:10px;padding:8px 12px">${t(
+          "quota_info_banner",
           fam.name,
+          fam.used,
+          fam.quota,
         )}</div>`
       : "";
 
@@ -213,6 +215,86 @@ function render() {
       confirmRelease(JSON.parse(el.dataset.release)),
     );
   }
+  for (const el of document.querySelectorAll("[data-ics]")) {
+    el.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const { date } = JSON.parse(el.dataset.ics);
+      downloadIcs(date);
+    });
+  }
+}
+
+// ---- Calendar (.ics) generation ----
+//
+// Produces a tiny VCALENDAR with two all-day events:
+//   - Cleaning day (the Saturday itself)
+//   - Key pickup reminder on the Friday before
+// Both SUMMARY strings come from i18n so the event text matches the UI.
+// Downloaded client-side — no server round trip.
+
+function downloadIcs(satDate) {
+  const ics = buildIcs(satDate);
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `menage-petit-nemo-${satDate}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function buildIcs(satIso) {
+  const satCompact = satIso.replace(/-/g, "");
+  const nextIso = addDays(satIso, 1);
+  const nextCompact = nextIso.replace(/-/g, "");
+  const friIso = addDays(satIso, -1);
+  const friCompact = friIso.replace(/-/g, "");
+  const dtstamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+  const uidBase = `menage-petit-nemo-${satCompact}`;
+
+  const cleaningSummary = icsEscape(t("ics_summary_cleaning"));
+  const keysSummary = icsEscape(t("ics_summary_keys"));
+
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//menage-petit-nemo//FR",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${uidBase}-cleaning@menage-petit-nemo`,
+    `DTSTAMP:${dtstamp}`,
+    `DTSTART;VALUE=DATE:${satCompact}`,
+    `DTEND;VALUE=DATE:${nextCompact}`,
+    `SUMMARY:${cleaningSummary}`,
+    "END:VEVENT",
+    "BEGIN:VEVENT",
+    `UID:${uidBase}-keys@menage-petit-nemo`,
+    `DTSTAMP:${dtstamp}`,
+    `DTSTART;VALUE=DATE:${friCompact}`,
+    `DTEND;VALUE=DATE:${satCompact}`,
+    `SUMMARY:${keysSummary}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ];
+  // RFC 5545 mandates CRLF line endings.
+  return lines.join("\r\n") + "\r\n";
+}
+
+function addDays(iso, n) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function icsEscape(s) {
+  return String(s ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\n/g, "\\n");
 }
 
 function renderSaturday(s) {
@@ -257,10 +339,12 @@ function renderSlot(sat, slot) {
     return `
       <div class="slot filled">
         <span>${escapeHtml(a.familyName)}</span>
-        <button class="link" title="${t("release")}"
-          data-release='${JSON.stringify({ id: a.assignmentId, name: a.familyName, familyId: a.familyId })}'>
-          ×
-        </button>
+        <span class="slot-actions">
+          <button class="link" title="${t("add_to_calendar")}"
+            data-ics='${JSON.stringify({ date: sat.date })}'>📅</button>
+          <button class="link" title="${t("release")}"
+            data-release='${JSON.stringify({ id: a.assignmentId, name: a.familyName, familyId: a.familyId })}'>×</button>
+        </span>
       </div>`;
   }
   if (sat.past) {
@@ -321,10 +405,6 @@ function confirmClaim({ saturdayId, slot, date }) {
     openFamilyPicker({ allowCancel: false });
     return;
   }
-  if (fam.used >= fam.quota) {
-    alert(t("err_quota_reached"));
-    return;
-  }
   const sat = state.saturdays.find((s) => s.id === saturdayId);
   if (sat && sat.slots.some((a) => a && a.familyId === fam.id)) {
     alert(t("err_family_already_booked"));
@@ -379,7 +459,6 @@ async function confirmRelease({ id, name, familyId }) {
 function errorMessage(code) {
   switch (code) {
     case "slot_taken":            return t("err_slot_taken");
-    case "quota_reached":         return t("err_quota_reached");
     case "saturday_closed":       return t("err_saturday_closed");
     case "saturday_past":         return t("err_saturday_past");
     case "family_already_booked": return t("err_family_already_booked");

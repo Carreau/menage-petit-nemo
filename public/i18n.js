@@ -31,17 +31,23 @@ export const STRINGS = {
     closed_label: "Fermé",
     past_label: "Passé",
     empty_slot: "Place libre",
+    add_to_calendar: "Ajouter au calendrier",
+    add_to_calendar_title: "Ajouter au calendrier",
+    add_to_calendar_help:
+      "Télécharge un fichier .ics avec le samedi de ménage et un rappel la veille pour récupérer les clés.",
+    download_ics: "Télécharger le fichier",
+    ics_summary_cleaning: "Ménage crèche Petit Nemo",
+    ics_summary_keys: "Récupérer les clés — ménage Petit Nemo",
     claim_confirm_title: "Prendre ce créneau ?",
     claim_confirm_body: (fam, date) =>
       `Inscrire ${fam} pour le ménage du ${date} ?`,
-    quota_full_banner: (fam) =>
-      `${fam} a déjà atteint son quota pour cette saison.`,
+    quota_info_banner: (fam, used, quota) =>
+      `${fam} a atteint ou dépassé son quota (${used}/${quota}). Vous pouvez toujours prendre des créneaux si besoin.`,
     confirm: "Confirmer",
     cancel: "Annuler",
     release_confirm: (fam) => `Libérer le créneau de ${fam} ?`,
     release: "Libérer",
     err_slot_taken: "Ce créneau vient d'être pris.",
-    err_quota_reached: "Cette famille a atteint son quota.",
     err_saturday_closed: "Ce samedi est fermé.",
     err_saturday_past: "Ce samedi est passé et ne peut plus être modifié.",
     err_family_already_booked:
@@ -114,17 +120,23 @@ export const STRINGS = {
     closed_label: "Closed",
     past_label: "Past",
     empty_slot: "Free spot",
+    add_to_calendar: "Add to calendar",
+    add_to_calendar_title: "Add to calendar",
+    add_to_calendar_help:
+      "Downloads an .ics file with the cleaning Saturday and a reminder the day before to pick up the keys.",
+    download_ics: "Download file",
+    ics_summary_cleaning: "Petit Nemo daycare cleaning",
+    ics_summary_keys: "Pick up keys — Petit Nemo cleaning",
     claim_confirm_title: "Take this slot?",
     claim_confirm_body: (fam, date) =>
       `Sign ${fam} up for cleaning on ${date}?`,
-    quota_full_banner: (fam) =>
-      `${fam} has already reached this season's quota.`,
+    quota_info_banner: (fam, used, quota) =>
+      `${fam} has reached or exceeded the quota (${used}/${quota}). You can still take slots if needed.`,
     confirm: "Confirm",
     cancel: "Cancel",
     release_confirm: (fam) => `Release ${fam}'s slot?`,
     release: "Release",
     err_slot_taken: "This slot was just taken.",
-    err_quota_reached: "This family has reached its quota.",
     err_saturday_closed: "This Saturday is closed.",
     err_saturday_past: "This Saturday is in the past and can no longer be changed.",
     err_family_already_booked:

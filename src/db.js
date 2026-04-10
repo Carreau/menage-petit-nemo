@@ -69,11 +69,7 @@ export async function claimSlot(db, { saturdayId, slot, familyId }) {
   if (!fam) return { error: "no_such_family" };
   if (!fam.active) return { error: "family_inactive" };
 
-  const usedRow = await db
-    .prepare("SELECT COUNT(*) AS c FROM assignments WHERE family_id = ?")
-    .bind(familyId)
-    .first();
-  if ((usedRow?.c || 0) >= fam.quota) return { error: "quota_reached" };
+  // Note: quota is informational only. Families are allowed to go over.
 
   const already = await db
     .prepare(
