@@ -323,6 +323,11 @@ function confirmClaim({ saturdayId, slot, date }) {
     alert(t("err_quota_reached"));
     return;
   }
+  const sat = state.saturdays.find((s) => s.id === saturdayId);
+  if (sat && sat.slots.some((a) => a && a.familyId === fam.id)) {
+    alert(t("err_family_already_booked"));
+    return;
+  }
   const backdrop = document.createElement("div");
   backdrop.className = "modal-backdrop";
   backdrop.innerHTML = `
@@ -371,11 +376,12 @@ async function confirmRelease({ id, name }) {
 
 function errorMessage(code) {
   switch (code) {
-    case "slot_taken":      return t("err_slot_taken");
-    case "quota_reached":   return t("err_quota_reached");
-    case "saturday_closed": return t("err_saturday_closed");
-    case "saturday_past":   return t("err_saturday_past");
-    default:                return t("err_generic");
+    case "slot_taken":            return t("err_slot_taken");
+    case "quota_reached":         return t("err_quota_reached");
+    case "saturday_closed":       return t("err_saturday_closed");
+    case "saturday_past":         return t("err_saturday_past");
+    case "family_already_booked": return t("err_family_already_booked");
+    default:                      return t("err_generic");
   }
 }
 

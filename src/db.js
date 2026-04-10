@@ -75,6 +75,14 @@ export async function claimSlot(db, { saturdayId, slot, familyId }) {
     .first();
   if ((usedRow?.c || 0) >= fam.quota) return { error: "quota_reached" };
 
+  const already = await db
+    .prepare(
+      "SELECT 1 FROM assignments WHERE saturday_id = ? AND family_id = ?",
+    )
+    .bind(saturdayId, familyId)
+    .first();
+  if (already) return { error: "family_already_booked" };
+
   try {
     const res = await db
       .prepare(
@@ -85,7 +93,16 @@ export async function claimSlot(db, { saturdayId, slot, familyId }) {
     return { ok: true, id: res.meta?.last_row_id };
   } catch (err) {
     const msg = String(err && err.message || err);
-    if (msg.includes("UNIQUE")) return { error: "slot_taken" };
+    if (msg.includes("UNIQUE")) {
+      // Two UNIQUE indexes can trip here:
+      //   (saturday_id, slot)      -> another family just took this slot
+      //   (saturday_id, family_id) -> this family raced a second claim
+      // Disambiguate by checking which one now holds the row.
+      if (msg.includes("family_id") || msg.includes("family_sat")) {
+        return { error: "family_already_booked" };
+      }
+      return { error: "slot_taken" };
+    }
     throw err;
   }
 }
