@@ -139,6 +139,13 @@ main {
   align-items: center;
 }
 .family .name { font-weight: 500; }
+.family .family-main { display: flex; flex-direction: column; min-width: 0; }
+.family .phone {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.family .phone:hover { color: var(--accent); }
 .family .tally {
   font-variant-numeric: tabular-nums;
   font-size: 14px;
@@ -197,6 +204,17 @@ main {
   justify-content: space-between;
   gap: 6px;
 }
+.saturday .slot.filled .slot-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.saturday .slot.filled .slot-phone {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.saturday .slot.filled .slot-phone:hover { color: var(--accent); }
 .saturday .slot.filled .ics-btn {
   font: inherit;
   cursor: pointer;
@@ -275,3 +293,45 @@ th { color: var(--muted); font-weight: 500; font-size: 13px; }
 }
 
 .hidden { display: none !important; }
+
+/* ---- Print view ---- */
+.print-page main { max-width: 900px; }
+.print-card { padding: 22px 26px; }
+.print-header { text-align: center; margin-bottom: 14px; }
+.print-header h2 { margin: 0 0 4px; font-size: 22px; }
+.print-header .print-sub { color: var(--muted); }
+.print-header .print-range { margin-top: 6px; font-weight: 600; }
+.print-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.print-table th,
+.print-table td {
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  vertical-align: top;
+  text-align: left;
+}
+.print-table th { background: #f2f5fa; font-weight: 600; color: var(--ink); }
+.print-table td .note { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.print-table td .phone { color: var(--muted); font-size: 12px; }
+.print-table td .empty { color: var(--muted); }
+.print-table tr.closed-row td { background: #fbf6f5; color: var(--muted); }
+.print-footer {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+@media print {
+  body { background: #fff; }
+  .no-print, header.top { display: none !important; }
+  main { padding: 0 !important; max-width: 100% !important; }
+  .card, .print-card {
+    box-shadow: none;
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+  .print-table { font-size: 12px; }
+  .print-table th, .print-table td { padding: 6px 8px; }
+  @page { margin: 14mm; }
+}

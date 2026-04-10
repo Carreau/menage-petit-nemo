@@ -130,6 +130,7 @@ function renderFamiliesTab() {
       (f) => `
       <tr data-id="${f.id}">
         <td><input class="fname" type="text" value="${attr(f.name)}" /></td>
+        <td><input class="fphone" type="tel" value="${attr(f.phone || "")}" placeholder="" /></td>
         <td style="max-width:90px"><input class="fquota" type="number" min="0" value="${f.quota}" /></td>
         <td><label><input class="factive" type="checkbox" ${f.active ? "checked" : ""}/> <span data-i18n="family_active"></span></label></td>
         <td class="badge">${f.used}</td>
@@ -145,6 +146,7 @@ function renderFamiliesTab() {
       <h2 data-i18n="add_family"></h2>
       <div class="row">
         <input type="text" id="newName" placeholder="" />
+        <input type="tel" id="newPhone" placeholder="" />
         <input type="number" id="newQuota" min="0" value="4" />
         <button class="primary" id="addFamily" data-i18n="add_family"></button>
       </div>
@@ -154,6 +156,7 @@ function renderFamiliesTab() {
         <thead>
           <tr>
             <th data-i18n="family_name"></th>
+            <th data-i18n="family_phone"></th>
             <th data-i18n="family_quota"></th>
             <th data-i18n="family_active"></th>
             <th>#</th>
@@ -168,13 +171,15 @@ function renderFamiliesTab() {
 
 function wireFamiliesTab() {
   document.getElementById("newName").placeholder = t("family_name");
+  document.getElementById("newPhone").placeholder = t("family_phone");
   document.getElementById("addFamily").addEventListener("click", async () => {
     const name = document.getElementById("newName").value.trim();
+    const phone = document.getElementById("newPhone").value.trim();
     const quota = Number(document.getElementById("newQuota").value || 4);
     if (!name) return;
     const res = await api("/api/admin/families", {
       method: "POST",
-      body: JSON.stringify({ name, quota }),
+      body: JSON.stringify({ name, phone, quota }),
     });
     if (!res.ok) return alert(t("err_generic"));
     await loadState();
@@ -183,11 +188,12 @@ function wireFamiliesTab() {
     const id = row.dataset.id;
     row.querySelector(".save").addEventListener("click", async () => {
       const name = row.querySelector(".fname").value.trim();
+      const phone = row.querySelector(".fphone").value.trim();
       const quota = Number(row.querySelector(".fquota").value);
       const active = row.querySelector(".factive").checked;
       const res = await api(`/api/admin/families/${id}`, {
         method: "PATCH",
-        body: JSON.stringify({ name, quota, active }),
+        body: JSON.stringify({ name, phone, quota, active }),
       });
       if (!res.ok) return alert(t("err_generic"));
       await loadState();
@@ -294,7 +300,22 @@ function renderOverviewTab() {
       </tr>`;
     })
     .join("");
+  const first = state.saturdays[0]?.date || "";
+  const last = state.saturdays[state.saturdays.length - 1]?.date || "";
   return `
+    <div class="card">
+      <h2 data-i18n="print_heading"></h2>
+      <p data-i18n="print_help" style="color:var(--muted)"></p>
+      <div class="row">
+        <label style="flex:1"><span data-i18n="start_date"></span><br/>
+          <input type="date" id="printStart" value="${first}"/></label>
+        <label style="flex:1"><span data-i18n="end_date"></span><br/>
+          <input type="date" id="printEnd" value="${last}"/></label>
+      </div>
+      <div class="row" style="margin-top:10px; justify-content:flex-end">
+        <button id="openPrintBtn" class="primary" data-i18n="print_open"></button>
+      </div>
+    </div>
     <div class="card">
       <div class="row" style="justify-content:flex-end">
         <button id="exportBtn" data-i18n="overview_export"></button>
@@ -308,6 +329,15 @@ function renderOverviewTab() {
 }
 
 function wireOverviewTab() {
+  document.getElementById("openPrintBtn").addEventListener("click", () => {
+    const start = document.getElementById("printStart").value;
+    const end = document.getElementById("printEnd").value;
+    const params = new URLSearchParams();
+    if (start) params.set("start", start);
+    if (end) params.set("end", end);
+    const url = `/print.html${params.toString() ? "?" + params.toString() : ""}`;
+    window.open(url, "_blank");
+  });
   document.getElementById("exportBtn").addEventListener("click", () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);

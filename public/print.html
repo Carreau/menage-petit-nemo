@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Impression — Ménage Petit Nemo</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="print-page">
+    <header class="top no-print">
+      <h1 data-i18n="print_title"></h1>
+      <span class="spacer"></span>
+      <button id="langToggle" class="link"></button>
+      <button id="printBtn" class="primary" data-i18n="print_now"></button>
+      <a href="/admin.html" data-i18n="admin_link"></a>
+    </header>
+
+    <main id="root"></main>
+
+    <script type="module" src="/print.js"></script>
+  </body>
+</html>

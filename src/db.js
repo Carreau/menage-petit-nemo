@@ -6,10 +6,10 @@ function todayIsoUtc() {
 
 export async function getState(db) {
   const [familiesRes, saturdaysRes, assignmentsRes] = await Promise.all([
-    db.prepare("SELECT id, name, quota, active FROM families ORDER BY name COLLATE NOCASE").all(),
+    db.prepare("SELECT id, name, quota, active, phone FROM families ORDER BY name COLLATE NOCASE").all(),
     db.prepare("SELECT id, date, note, closed FROM saturdays ORDER BY date").all(),
     db.prepare(`
-      SELECT a.id, a.saturday_id, a.family_id, a.slot, f.name AS family_name
+      SELECT a.id, a.saturday_id, a.family_id, a.slot, f.name AS family_name, f.phone AS family_phone
       FROM assignments a
       JOIN families f ON f.id = a.family_id
     `).all(),
@@ -22,6 +22,7 @@ export async function getState(db) {
     name: f.name,
     quota: f.quota,
     active: !!f.active,
+    phone: f.phone || "",
     used: 0,
   }));
   const famById = new Map(families.map((f) => [f.id, f]));
@@ -43,6 +44,7 @@ export async function getState(db) {
       assignmentId: a.id,
       familyId: a.family_id,
       familyName: a.family_name,
+      familyPhone: a.family_phone || "",
     };
     const fam = famById.get(a.family_id);
     if (fam) fam.used += 1;
@@ -122,18 +124,19 @@ export async function releaseSlot(db, assignmentId, { familyId, isAdmin = false 
 
 // ---- Admin: families ----
 
-export async function createFamily(db, { name, quota }) {
+export async function createFamily(db, { name, quota, phone }) {
   const n = String(name || "").trim();
   if (!n) return { error: "name_required" };
   const q = Number.isFinite(Number(quota)) ? Number(quota) : 4;
+  const p = String(phone || "").trim() || null;
   const res = await db
-    .prepare("INSERT INTO families (name, quota) VALUES (?, ?)")
-    .bind(n, q)
+    .prepare("INSERT INTO families (name, quota, phone) VALUES (?, ?, ?)")
+    .bind(n, q, p)
     .run();
   return { ok: true, id: res.meta?.last_row_id };
 }
 
-export async function updateFamily(db, id, { name, quota, active }) {
+export async function updateFamily(db, id, { name, quota, active, phone }) {
   const sets = [];
   const binds = [];
   if (name !== undefined) {
@@ -149,6 +152,11 @@ export async function updateFamily(db, id, { name, quota, active }) {
   if (active !== undefined) {
     sets.push("active = ?");
     binds.push(active ? 1 : 0);
+  }
+  if (phone !== undefined) {
+    const p = String(phone || "").trim();
+    sets.push("phone = ?");
+    binds.push(p || null);
   }
   if (!sets.length) return { ok: true };
   binds.push(id);

@@ -74,6 +74,7 @@ export const STRINGS = {
     tab_danger: "Saison",
     add_family: "Ajouter une famille",
     family_name: "Nom",
+    family_phone: "Téléphone",
     family_quota: "Quota",
     family_active: "Active",
     save: "Enregistrer",
@@ -95,6 +96,18 @@ export const STRINGS = {
     danger_clear_saturdays_confirm:
       "Supprimer tous les samedis et toutes leurs affectations ? Les familles sont conservées.",
     overview_export: "Exporter (JSON)",
+    print_heading: "Impression / PDF",
+    print_help:
+      "Choisissez une période puis ouvrez la vue d'impression. Utilisez l'impression du navigateur pour enregistrer en PDF ou imprimer pour afficher à la crèche.",
+    print_open: "Ouvrir la vue d'impression",
+    print_title: "Planning à imprimer",
+    print_now: "Imprimer",
+    print_all_range: "Tout le planning",
+    print_col_date: "Date",
+    print_col_slot1: "Place 1",
+    print_col_slot2: "Place 2",
+    print_footer_hint:
+      "Généré depuis l'appli Ménage Petit Nemo — n'hésitez pas à prévenir l'autre famille par téléphone.",
   },
   en: {
     app_title: "Petit Nemo Cleaning",
@@ -168,6 +181,7 @@ export const STRINGS = {
     tab_danger: "Season",
     add_family: "Add a family",
     family_name: "Name",
+    family_phone: "Phone",
     family_quota: "Quota",
     family_active: "Active",
     save: "Save",
@@ -189,6 +203,18 @@ export const STRINGS = {
     danger_clear_saturdays_confirm:
       "Delete every Saturday and all their assignments? Families are kept.",
     overview_export: "Export (JSON)",
+    print_heading: "Print / PDF",
+    print_help:
+      "Pick a range then open the print view. Use your browser's Print dialog to save as PDF or to print a copy for the daycare.",
+    print_open: "Open print view",
+    print_title: "Schedule to print",
+    print_now: "Print",
+    print_all_range: "Full schedule",
+    print_col_date: "Date",
+    print_col_slot1: "Slot 1",
+    print_col_slot2: "Slot 2",
+    print_footer_hint:
+      "Generated from the Petit Nemo cleaning app — feel free to call your co-cleaning family in advance.",
   },
 };
 
