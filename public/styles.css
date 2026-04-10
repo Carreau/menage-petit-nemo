@@ -186,6 +186,8 @@ main {
 }
 .saturday .slot.empty { cursor: pointer; color: var(--muted); }
 .saturday .slot.empty:hover { border-color: var(--accent); color: var(--accent); }
+.saturday .slot-actions { display: inline-flex; gap: 2px; }
+.saturday .slot-actions button { font-size: 15px; padding: 2px 6px; }
 
 @media (max-width: 720px) {
   .saturday { grid-template-columns: 1fr; }

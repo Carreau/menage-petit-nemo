@@ -92,8 +92,11 @@ in with `FAMILY_PASSWORD`, and you should see an empty schedule. Visit
 - [ ] Claiming an empty slot only asks for confirmation (no picker)
 - [ ] Claiming a taken slot returns "slot taken"
 - [ ] Same family claiming both slots of the same Saturday is blocked
-- [ ] Claiming past quota is blocked
+- [ ] A family that has reached its quota can STILL claim more slots
+      (quota is informational — an info banner appears above the schedule)
 - [ ] Releasing a slot frees it
+- [ ] On an owned future slot, the 📅 button downloads an .ics with two
+      all-day events: the Saturday cleaning and a Friday key-pickup reminder
 - [ ] × release button only appears on the current family's own slots
 - [ ] Server rejects a release for another family (admin cookie bypasses)
 - [ ] Past Saturdays show no claim/release buttons, server rejects edits

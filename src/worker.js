@@ -167,7 +167,6 @@ async function handleApi(request, env, url) {
 function statusForError(code) {
   switch (code) {
     case "slot_taken": return 409;
-    case "quota_reached": return 409;
     case "saturday_closed": return 409;
     case "saturday_past": return 409;
     case "family_already_booked": return 409;
