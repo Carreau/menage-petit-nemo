@@ -1,0 +1,22 @@
+name = "menage-petit-nemo"
+main = "src/worker.js"
+compatibility_date = "2024-11-01"
+
+# Static assets served from ./public (index.html, admin.html, app.js, ...)
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# D1 database binding.
+# Create the database once with:  npm run db:create
+# then copy the returned database_id below and run:  npm run db:migrate
+[[d1_databases]]
+binding = "DB"
+database_name = "menage-petit-nemo"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+# Secrets (set via `wrangler secret put <NAME>`):
+#   FAMILY_PASSWORD  - shared password handed out to parents
+#   ADMIN_PASSWORD   - password for the /admin panel
+#   COOKIE_SECRET    - random 32+ character string used to sign cookies

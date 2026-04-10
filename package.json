@@ -1,0 +1,16 @@
+{
+  "name": "menage-petit-nemo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Saturday cleaning scheduler for the Petit Nemo daycare",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create menage-petit-nemo",
+    "db:migrate": "wrangler d1 migrations apply menage-petit-nemo --remote",
+    "db:migrate:local": "wrangler d1 migrations apply menage-petit-nemo --local"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}
