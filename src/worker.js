@@ -85,11 +85,16 @@ async function handleApi(request, env, url) {
   if (pathname === "/api/claim" && method === "POST") {
     if (!(await hasFamilyAccess(request, env))) return json({ error: "unauthorized" }, 401);
     const body = await safeJson(request);
-    const res = await claimSlot(env.DB, {
-      saturdayId: Number(body.saturdayId),
-      slot: Number(body.slot),
-      familyId: Number(body.familyId),
-    });
+    const isAdmin = await hasAdminAccess(request, env);
+    const res = await claimSlot(
+      env.DB,
+      {
+        saturdayId: Number(body.saturdayId),
+        slot: Number(body.slot),
+        familyId: Number(body.familyId),
+      },
+      { isAdmin },
+    );
     if (res.error) return json(res, statusForError(res.error));
     return json(res);
   }

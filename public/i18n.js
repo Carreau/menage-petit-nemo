@@ -41,6 +41,9 @@ export const STRINGS = {
     claim_confirm_title: "Prendre ce créneau ?",
     claim_confirm_body: (fam, date) =>
       `Inscrire ${fam} pour le ménage du ${date} ?`,
+    pick_family_title: "Choisir une famille",
+    pick_family_help:
+      "Sélectionnez la famille à affecter à ce créneau (correction admin).",
     quota_info_banner: (fam, used, quota) =>
       `${fam} a atteint ou dépassé son quota (${used}/${quota}). Vous pouvez toujours prendre des créneaux si besoin.`,
     confirm: "Confirmer",
@@ -130,6 +133,9 @@ export const STRINGS = {
     claim_confirm_title: "Take this slot?",
     claim_confirm_body: (fam, date) =>
       `Sign ${fam} up for cleaning on ${date}?`,
+    pick_family_title: "Pick a family",
+    pick_family_help:
+      "Select the family to assign to this slot (admin correction).",
     quota_info_banner: (fam, used, quota) =>
       `${fam} has reached or exceeded the quota (${used}/${quota}). You can still take slots if needed.`,
     confirm: "Confirm",

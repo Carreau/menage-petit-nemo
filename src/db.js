@@ -51,7 +51,7 @@ export async function getState(db) {
   return { families, saturdays, today };
 }
 
-export async function claimSlot(db, { saturdayId, slot, familyId }) {
+export async function claimSlot(db, { saturdayId, slot, familyId }, { isAdmin = false } = {}) {
   if (![1, 2].includes(Number(slot))) return { error: "bad_slot" };
 
   const sat = await db
@@ -60,7 +60,7 @@ export async function claimSlot(db, { saturdayId, slot, familyId }) {
     .first();
   if (!sat) return { error: "no_such_saturday" };
   if (sat.closed) return { error: "saturday_closed" };
-  if (sat.date < todayIsoUtc()) return { error: "saturday_past" };
+  if (!isAdmin && sat.date < todayIsoUtc()) return { error: "saturday_past" };
 
   const fam = await db
     .prepare("SELECT id, quota, active FROM families WHERE id = ?")
@@ -114,7 +114,7 @@ export async function releaseSlot(db, assignmentId, { familyId, isAdmin = false 
     .bind(assignmentId)
     .first();
   if (!row) return { error: "not_found" };
-  if (row.date < todayIsoUtc()) return { error: "saturday_past" };
+  if (!isAdmin && row.date < todayIsoUtc()) return { error: "saturday_past" };
   if (!isAdmin && Number(familyId) !== row.family_id) return { error: "not_your_slot" };
   await db.prepare("DELETE FROM assignments WHERE id = ?").bind(assignmentId).run();
   return { ok: true };

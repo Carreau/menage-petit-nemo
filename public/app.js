@@ -15,6 +15,7 @@ const CURRENT_FAMILY_KEY = "mnp_current_family";
 
 let state = null;
 let freeOnly = false;
+let isAdmin = false;
 
 function getCurrentFamilyId() {
   const raw = localStorage.getItem(CURRENT_FAMILY_KEY);
@@ -82,6 +83,7 @@ async function boot() {
     renderLogin();
     return;
   }
+  isAdmin = !!who.data.admin;
   logoutBtn.classList.remove("hidden");
   await loadState();
 }
@@ -247,12 +249,17 @@ function downloadIcs(satDate) {
 
 function buildIcs(satIso) {
   const satCompact = satIso.replace(/-/g, "");
-  const nextIso = addDays(satIso, 1);
-  const nextCompact = nextIso.replace(/-/g, "");
-  const friIso = addDays(satIso, -1);
-  const friCompact = friIso.replace(/-/g, "");
+  const friCompact = addDays(satIso, -1).replace(/-/g, "");
   const dtstamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
   const uidBase = `menage-petit-nemo-${satCompact}`;
+
+  // Floating local time (no TZID, no trailing Z). The calendar app renders
+  // these in the viewer's local timezone, which is what parents want since
+  // the cleaning happens at the daycare in France.
+  const cleaningStart = `${satCompact}T090000`;
+  const cleaningEnd   = `${satCompact}T120000`;
+  const keysStart     = `${friCompact}T160000`;
+  const keysEnd       = `${friCompact}T180000`;
 
   const cleaningSummary = icsEscape(t("ics_summary_cleaning"));
   const keysSummary = icsEscape(t("ics_summary_keys"));
@@ -266,15 +273,15 @@ function buildIcs(satIso) {
     "BEGIN:VEVENT",
     `UID:${uidBase}-cleaning@menage-petit-nemo`,
     `DTSTAMP:${dtstamp}`,
-    `DTSTART;VALUE=DATE:${satCompact}`,
-    `DTEND;VALUE=DATE:${nextCompact}`,
+    `DTSTART:${cleaningStart}`,
+    `DTEND:${cleaningEnd}`,
     `SUMMARY:${cleaningSummary}`,
     "END:VEVENT",
     "BEGIN:VEVENT",
     `UID:${uidBase}-keys@menage-petit-nemo`,
     `DTSTAMP:${dtstamp}`,
-    `DTSTART;VALUE=DATE:${friCompact}`,
-    `DTEND;VALUE=DATE:${satCompact}`,
+    `DTSTART:${keysStart}`,
+    `DTEND:${keysEnd}`,
     `SUMMARY:${keysSummary}`,
     "END:VEVENT",
     "END:VCALENDAR",
@@ -330,31 +337,91 @@ function renderSlot(sat, slot) {
   if (a) {
     const fam = currentFamily();
     const isOwn = fam && a.familyId === fam.id;
-    if (sat.past || !isOwn) {
-      return `
-        <div class="slot filled">
-          <span>${escapeHtml(a.familyName)}</span>
-        </div>`;
-    }
+    // Release: own future slots, or any slot when admin.
+    const canRelease = isAdmin || (!sat.past && isOwn);
+    // Calendar export only makes sense for the current family's future slots.
+    const canIcs = !sat.past && isOwn;
+    const releaseBtn = canRelease
+      ? `<button class="link" title="${t("release")}"
+           data-release='${JSON.stringify({ id: a.assignmentId, name: a.familyName, familyId: a.familyId })}'>×</button>`
+      : "";
+    const icsBtn = canIcs
+      ? `<button class="ics-btn"
+           data-ics='${JSON.stringify({ date: sat.date })}'>📅 ${t("add_to_calendar")}</button>`
+      : "";
     return `
       <div class="slot filled">
-        <span>${escapeHtml(a.familyName)}</span>
-        <span class="slot-actions">
-          <button class="link" title="${t("add_to_calendar")}"
-            data-ics='${JSON.stringify({ date: sat.date })}'>📅</button>
-          <button class="link" title="${t("release")}"
-            data-release='${JSON.stringify({ id: a.assignmentId, name: a.familyName, familyId: a.familyId })}'>×</button>
-        </span>
+        <div class="slot-head">
+          <span>${escapeHtml(a.familyName)}</span>
+          ${releaseBtn}
+        </div>
+        ${icsBtn}
       </div>`;
   }
-  if (sat.past) {
+  // Empty slot. Admins can still claim on past saturdays (correction flow).
+  if (sat.past && !isAdmin) {
     return `<div class="slot">—</div>`;
   }
   return `
     <div class="slot empty"
-      data-claim='${JSON.stringify({ saturdayId: sat.id, slot, date: sat.date })}'>
+      data-claim='${JSON.stringify({ saturdayId: sat.id, slot, date: sat.date, past: !!sat.past })}'>
       + ${t("empty_slot")}
     </div>`;
+}
+
+// Admin-only: pick which family to assign to a given (possibly past) slot.
+// Reused for corrections on historical saturdays.
+function openAdminClaimPicker({ saturdayId, slot, date }) {
+  const sat = state.saturdays.find((s) => s.id === saturdayId);
+  const alreadyIds = new Set(
+    (sat?.slots || []).filter(Boolean).map((a) => a.familyId),
+  );
+  const eligible = state.families.filter((f) => f.active && !alreadyIds.has(f.id));
+  if (!eligible.length) {
+    alert(t("err_family_already_booked"));
+    return;
+  }
+  const backdrop = document.createElement("div");
+  backdrop.className = "modal-backdrop";
+  backdrop.innerHTML = `
+    <div class="modal">
+      <h3 data-i18n="pick_family_title"></h3>
+      <p>${formatDate(date)}</p>
+      <p data-i18n="pick_family_help"></p>
+      <select id="pick">
+        ${eligible
+          .map((f) => `<option value="${f.id}">${escapeHtml(f.name)}</option>`)
+          .join("")}
+      </select>
+      <div class="error" id="modalErr"></div>
+      <div class="actions">
+        <button data-act="cancel" data-i18n="cancel"></button>
+        <button class="primary" data-act="ok" data-i18n="confirm"></button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+  applyI18n();
+  const close = () => backdrop.remove();
+  backdrop.addEventListener("click", (e) => {
+    if (e.target === backdrop) close();
+  });
+  backdrop.querySelector('[data-act="cancel"]').addEventListener("click", close);
+  backdrop.querySelector('[data-act="ok"]').addEventListener("click", async () => {
+    const familyId = Number(backdrop.querySelector("#pick").value);
+    if (!familyId) return;
+    const res = await api("/api/claim", {
+      method: "POST",
+      body: JSON.stringify({ saturdayId, slot, familyId }),
+    });
+    if (res.ok) {
+      close();
+      await loadState();
+      return;
+    }
+    backdrop.querySelector("#modalErr").textContent = errorMessage(res.data?.error);
+    if (res.data?.error === "slot_taken") await loadState();
+  });
 }
 
 function openFamilyPicker({ allowCancel }) {
@@ -399,7 +466,13 @@ function openFamilyPicker({ allowCancel }) {
   });
 }
 
-function confirmClaim({ saturdayId, slot, date }) {
+function confirmClaim({ saturdayId, slot, date, past }) {
+  // Admin + past: open a family picker so the admin can assign/correct
+  // the historical slot for any family.
+  if (isAdmin && past) {
+    openAdminClaimPicker({ saturdayId, slot, date });
+    return;
+  }
   const fam = currentFamily();
   if (!fam) {
     openFamilyPicker({ allowCancel: false });
