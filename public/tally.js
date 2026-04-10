@@ -71,9 +71,15 @@ function render() {
         .map((f) => {
           const cls =
             f.used >= f.quota ? "done" : f.used > 0 ? "partial" : "empty";
+          const phone = f.phone
+            ? `<a class="phone" href="tel:${encodeURIComponent(f.phone)}">${escapeHtml(f.phone)}</a>`
+            : "";
           return `
             <div class="family ${cls}">
-              <span class="name">${escapeHtml(f.name)}</span>
+              <div class="family-main">
+                <span class="name">${escapeHtml(f.name)}</span>
+                ${phone}
+              </div>
               <span class="tally">${t("quota_label", f.used, f.quota)}</span>
             </div>`;
         })

@@ -349,10 +349,16 @@ function renderSlot(sat, slot) {
       ? `<button class="ics-btn"
            data-ics='${JSON.stringify({ date: sat.date })}'>📅 ${t("add_to_calendar")}</button>`
       : "";
+    const phone = a.familyPhone
+      ? `<a class="slot-phone" href="tel:${encodeURIComponent(a.familyPhone)}">${escapeHtml(a.familyPhone)}</a>`
+      : "";
     return `
       <div class="slot filled">
         <div class="slot-head">
-          <span>${escapeHtml(a.familyName)}</span>
+          <div class="slot-who">
+            <span>${escapeHtml(a.familyName)}</span>
+            ${phone}
+          </div>
           ${releaseBtn}
         </div>
         ${icsBtn}
