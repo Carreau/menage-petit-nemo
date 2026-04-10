@@ -15,6 +15,8 @@ const CURRENT_FAMILY_KEY = "mnp_current_family";
 
 let state = null;
 let freeOnly = false;
+let showPast = false;
+let mineOnly = false;
 let isAdmin = false;
 
 function getCurrentFamilyId() {
@@ -174,12 +176,15 @@ function render() {
         )}</div>`
       : "";
 
-  const visibleSaturdays = freeOnly
-    ? state.saturdays.filter(
-        (s) =>
-          !s.closed && !s.past && (s.slots[0] === null || s.slots[1] === null),
-      )
-    : state.saturdays;
+  const visibleSaturdays = state.saturdays.filter((s) => {
+    if (!showPast && s.past) return false;
+    if (freeOnly && (s.closed || s.past || (s.slots[0] && s.slots[1]))) return false;
+    if (mineOnly) {
+      if (!fam) return false;
+      if (!s.slots.some((a) => a && a.familyId === fam.id)) return false;
+    }
+    return true;
+  });
 
   root.innerHTML = `
     <section class="card">
@@ -194,6 +199,8 @@ function render() {
       ${banner}
       <div class="filter-row">
         <label><input type="checkbox" id="freeOnly" ${freeOnly ? "checked" : ""}/> <span data-i18n="filter_free_only"></span></label>
+        <label><input type="checkbox" id="mineOnly" ${mineOnly ? "checked" : ""} ${fam ? "" : "disabled"}/> <span data-i18n="filter_mine_only"></span></label>
+        <label><input type="checkbox" id="showPast" ${showPast ? "checked" : ""}/> <span data-i18n="filter_show_past"></span></label>
       </div>
       ${
         state.saturdays.length
@@ -206,6 +213,14 @@ function render() {
 
   document.getElementById("freeOnly").addEventListener("change", (e) => {
     freeOnly = e.target.checked;
+    render();
+  });
+  document.getElementById("mineOnly").addEventListener("change", (e) => {
+    mineOnly = e.target.checked;
+    render();
+  });
+  document.getElementById("showPast").addEventListener("change", (e) => {
+    showPast = e.target.checked;
     render();
   });
 

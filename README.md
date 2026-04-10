@@ -110,6 +110,10 @@ in with `FAMILY_PASSWORD`, and you should see an empty schedule. Visit
 - [ ] Logged in as admin, past Saturdays show claim/release buttons, and
       claiming an empty past slot opens a family picker
 - [ ] Generating a Saturday with today's date in the past (back-test) renders as locked
+- [ ] Past Saturdays are hidden by default; "View past Saturdays"
+      toggle reveals them
+- [ ] "Only my slots" filter narrows the schedule to the current
+      family's assignments
 - [ ] Language toggle swaps FR ↔ EN everywhere
 - [ ] Marking a Saturday **closed** removes its slots from the count
 - [ ] Reset (danger zone) clears all assignments
