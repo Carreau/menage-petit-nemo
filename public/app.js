@@ -364,15 +364,14 @@ function renderSlot(sat, slot) {
       ? `<button class="ics-btn"
            data-ics='${JSON.stringify({ date: sat.date })}'>📅 ${t("add_to_calendar")}</button>`
       : "";
-    const phone = a.familyPhone
-      ? `<a class="slot-phone" href="tel:${encodeURIComponent(a.familyPhone)}">${escapeHtml(a.familyPhone)}</a>`
-      : "";
+    const famRec = state.families.find((f) => f.id === a.familyId);
+    const parentsHtml = renderParentLines(famRec?.parents || []);
     return `
       <div class="slot filled">
         <div class="slot-head">
           <div class="slot-who">
             <span>${escapeHtml(a.familyName)}</span>
-            ${phone}
+            ${parentsHtml}
           </div>
           ${releaseBtn}
         </div>
@@ -559,6 +558,20 @@ function errorMessage(code) {
     case "not_your_slot":         return t("err_not_your_slot");
     default:                      return t("err_generic");
   }
+}
+
+function renderParentLines(parents) {
+  return (parents || [])
+    .filter((p) => p && (p.name || p.phone))
+    .map((p) => {
+      const name = p.name ? escapeHtml(p.name) : "";
+      const phone = p.phone
+        ? `<a class="slot-phone" href="tel:${encodeURIComponent(p.phone)}">${escapeHtml(p.phone)}</a>`
+        : "";
+      const sep = name && phone ? " · " : "";
+      return `<div class="slot-parent">${name}${sep}${phone}</div>`;
+    })
+    .join("");
 }
 
 function escapeHtml(s) {

@@ -125,81 +125,125 @@ function render() {
 // ---- Families tab ----
 
 function renderFamiliesTab() {
-  const rows = state.families
-    .map(
-      (f) => `
-      <tr data-id="${f.id}">
-        <td><input class="fname" type="text" value="${attr(f.name)}" /></td>
-        <td><input class="fphone" type="tel" value="${attr(f.phone || "")}" placeholder="" /></td>
-        <td style="max-width:90px"><input class="fquota" type="number" min="0" value="${f.quota}" /></td>
-        <td><label><input class="factive" type="checkbox" ${f.active ? "checked" : ""}/> <span data-i18n="family_active"></span></label></td>
-        <td class="badge">${f.used}</td>
-        <td style="text-align:right">
-          <button class="save primary" data-i18n="save"></button>
-          <button class="del danger"  data-i18n="delete"></button>
-        </td>
-      </tr>`,
-    )
+  const cards = state.families
+    .map((f) => {
+      const p1 = f.parents?.[0] || { name: "", phone: "" };
+      const p2 = f.parents?.[1] || { name: "", phone: "" };
+      return `
+        <div class="family-card" data-id="${f.id}">
+          <div class="family-card-head">
+            <input class="fname" type="text" value="${attr(f.name)}" />
+            <label><span data-i18n="family_quota"></span>
+              <input class="fquota" type="number" min="0" value="${f.quota}" />
+            </label>
+            <label><input class="factive" type="checkbox" ${f.active ? "checked" : ""}/>
+              <span data-i18n="family_active"></span></label>
+            <span class="badge">#${f.used}</span>
+          </div>
+          <div class="family-card-parent">
+            <span class="parent-label" data-i18n="parent1"></span>
+            <input class="p1name" type="text" placeholder="" value="${attr(p1.name)}" />
+            <input class="p1phone" type="tel" placeholder="" value="${attr(p1.phone)}" />
+          </div>
+          <div class="family-card-parent">
+            <span class="parent-label" data-i18n="parent2"></span>
+            <input class="p2name" type="text" placeholder="" value="${attr(p2.name)}" />
+            <input class="p2phone" type="tel" placeholder="" value="${attr(p2.phone)}" />
+          </div>
+          <div class="family-card-actions">
+            <button class="del danger" data-i18n="delete"></button>
+            <button class="save primary" data-i18n="save"></button>
+          </div>
+        </div>`;
+    })
     .join("");
   return `
     <div class="card">
       <h2 data-i18n="add_family"></h2>
-      <div class="row">
-        <input type="text" id="newName" placeholder="" />
-        <input type="tel" id="newPhone" placeholder="" />
-        <input type="number" id="newQuota" min="0" value="4" />
-        <button class="primary" id="addFamily" data-i18n="add_family"></button>
+      <div class="family-card family-card-new">
+        <div class="family-card-head">
+          <input type="text" id="newName" placeholder="" />
+          <label><span data-i18n="family_quota"></span>
+            <input type="number" id="newQuota" min="0" value="4" />
+          </label>
+        </div>
+        <div class="family-card-parent">
+          <span class="parent-label" data-i18n="parent1"></span>
+          <input type="text" id="newP1Name" placeholder="" />
+          <input type="tel" id="newP1Phone" placeholder="" />
+        </div>
+        <div class="family-card-parent">
+          <span class="parent-label" data-i18n="parent2"></span>
+          <input type="text" id="newP2Name" placeholder="" />
+          <input type="tel" id="newP2Phone" placeholder="" />
+        </div>
+        <div class="family-card-actions">
+          <button class="primary" id="addFamily" data-i18n="add_family"></button>
+        </div>
       </div>
     </div>
-    <div class="card">
-      <table>
-        <thead>
-          <tr>
-            <th data-i18n="family_name"></th>
-            <th data-i18n="family_phone"></th>
-            <th data-i18n="family_quota"></th>
-            <th data-i18n="family_active"></th>
-            <th>#</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
+    <div class="family-list">${cards}</div>
   `;
 }
 
 function wireFamiliesTab() {
   document.getElementById("newName").placeholder = t("family_name");
-  document.getElementById("newPhone").placeholder = t("family_phone");
+  document.getElementById("newP1Name").placeholder = t("parent_name");
+  document.getElementById("newP1Phone").placeholder = t("parent_phone");
+  document.getElementById("newP2Name").placeholder = t("parent_name");
+  document.getElementById("newP2Phone").placeholder = t("parent_phone");
   document.getElementById("addFamily").addEventListener("click", async () => {
     const name = document.getElementById("newName").value.trim();
-    const phone = document.getElementById("newPhone").value.trim();
     const quota = Number(document.getElementById("newQuota").value || 4);
+    const parents = [
+      {
+        name: document.getElementById("newP1Name").value,
+        phone: document.getElementById("newP1Phone").value,
+      },
+      {
+        name: document.getElementById("newP2Name").value,
+        phone: document.getElementById("newP2Phone").value,
+      },
+    ];
     if (!name) return;
     const res = await api("/api/admin/families", {
       method: "POST",
-      body: JSON.stringify({ name, phone, quota }),
+      body: JSON.stringify({ name, quota, parents }),
     });
     if (!res.ok) return alert(t("err_generic"));
     await loadState();
   });
-  for (const row of document.querySelectorAll("tr[data-id]")) {
-    const id = row.dataset.id;
-    row.querySelector(".save").addEventListener("click", async () => {
-      const name = row.querySelector(".fname").value.trim();
-      const phone = row.querySelector(".fphone").value.trim();
-      const quota = Number(row.querySelector(".fquota").value);
-      const active = row.querySelector(".factive").checked;
+  for (const card of document.querySelectorAll(".family-card[data-id]")) {
+    const id = card.dataset.id;
+    card.querySelectorAll('input[type="text"], input[type="tel"]').forEach((i) => {
+      if (i.classList.contains("p1name") || i.classList.contains("p2name"))
+        i.placeholder = t("parent_name");
+      if (i.classList.contains("p1phone") || i.classList.contains("p2phone"))
+        i.placeholder = t("parent_phone");
+    });
+    card.querySelector(".save").addEventListener("click", async () => {
+      const name = card.querySelector(".fname").value.trim();
+      const quota = Number(card.querySelector(".fquota").value);
+      const active = card.querySelector(".factive").checked;
+      const parents = [
+        {
+          name: card.querySelector(".p1name").value,
+          phone: card.querySelector(".p1phone").value,
+        },
+        {
+          name: card.querySelector(".p2name").value,
+          phone: card.querySelector(".p2phone").value,
+        },
+      ];
       const res = await api(`/api/admin/families/${id}`, {
         method: "PATCH",
-        body: JSON.stringify({ name, phone, quota, active }),
+        body: JSON.stringify({ name, quota, active, parents }),
       });
       if (!res.ok) return alert(t("err_generic"));
       await loadState();
     });
-    row.querySelector(".del").addEventListener("click", async () => {
-      const name = row.querySelector(".fname").value.trim();
+    card.querySelector(".del").addEventListener("click", async () => {
+      const name = card.querySelector(".fname").value.trim();
       if (!confirm(t("confirm_delete_family", name))) return;
       const res = await api(`/api/admin/families/${id}`, { method: "DELETE" });
       if (!res.ok) return alert(t("err_generic"));

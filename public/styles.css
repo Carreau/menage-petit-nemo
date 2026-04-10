@@ -140,12 +140,15 @@ main {
 }
 .family .name { font-weight: 500; }
 .family .family-main { display: flex; flex-direction: column; min-width: 0; }
-.family .phone {
+.family .family-parent {
   font-size: 12px;
+  color: var(--muted);
+}
+.family .family-parent .phone {
   color: var(--muted);
   text-decoration: none;
 }
-.family .phone:hover { color: var(--accent); }
+.family .family-parent .phone:hover { color: var(--accent); }
 .family .tally {
   font-variant-numeric: tabular-nums;
   font-size: 14px;
@@ -209,8 +212,12 @@ main {
   flex-direction: column;
   min-width: 0;
 }
-.saturday .slot.filled .slot-phone {
+.saturday .slot.filled .slot-parent {
   font-size: 12px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+.saturday .slot.filled .slot-phone {
   color: var(--muted);
   text-decoration: none;
 }
@@ -293,6 +300,59 @@ th { color: var(--muted); font-weight: 500; font-size: 13px; }
 }
 
 .hidden { display: none !important; }
+
+/* ---- Admin family cards ---- */
+.family-list { display: flex; flex-direction: column; gap: 12px; }
+.family-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.family-card-new { background: #fafcff; }
+.family-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.family-card-head .fname,
+.family-card-head #newName {
+  flex: 1 1 220px;
+  font-weight: 600;
+}
+.family-card-head label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.family-card-head .fquota,
+.family-card-head #newQuota {
+  width: 70px;
+}
+.family-card-parent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.family-card-parent .parent-label {
+  min-width: 72px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.family-card-parent input { flex: 1 1 140px; }
+.family-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
 
 /* ---- Print view ---- */
 .print-page main { max-width: 900px; }
