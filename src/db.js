@@ -107,10 +107,10 @@ export async function claimSlot(db, { saturdayId, slot, familyId }) {
   }
 }
 
-export async function releaseSlot(db, assignmentId) {
+export async function releaseSlot(db, assignmentId, { familyId, isAdmin = false } = {}) {
   const row = await db
     .prepare(
-      `SELECT a.id, s.date
+      `SELECT a.id, a.family_id, s.date
          FROM assignments a
          JOIN saturdays s ON s.id = a.saturday_id
         WHERE a.id = ?`,
@@ -119,6 +119,7 @@ export async function releaseSlot(db, assignmentId) {
     .first();
   if (!row) return { error: "not_found" };
   if (row.date < todayIsoUtc()) return { error: "saturday_past" };
+  if (!isAdmin && Number(familyId) !== row.family_id) return { error: "not_your_slot" };
   await db.prepare("DELETE FROM assignments WHERE id = ?").bind(assignmentId).run();
   return { ok: true };
 }

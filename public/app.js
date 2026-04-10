@@ -246,7 +246,9 @@ function renderSaturday(s) {
 function renderSlot(sat, slot) {
   const a = sat.slots[slot - 1];
   if (a) {
-    if (sat.past) {
+    const fam = currentFamily();
+    const isOwn = fam && a.familyId === fam.id;
+    if (sat.past || !isOwn) {
       return `
         <div class="slot filled">
           <span>${escapeHtml(a.familyName)}</span>
@@ -256,7 +258,7 @@ function renderSlot(sat, slot) {
       <div class="slot filled">
         <span>${escapeHtml(a.familyName)}</span>
         <button class="link" title="${t("release")}"
-          data-release='${JSON.stringify({ id: a.assignmentId, name: a.familyName })}'>
+          data-release='${JSON.stringify({ id: a.assignmentId, name: a.familyName, familyId: a.familyId })}'>
           ×
         </button>
       </div>`;
@@ -364,11 +366,11 @@ function confirmClaim({ saturdayId, slot, date }) {
   });
 }
 
-async function confirmRelease({ id, name }) {
+async function confirmRelease({ id, name, familyId }) {
   if (!confirm(t("release_confirm", name))) return;
   const res = await api("/api/release", {
     method: "POST",
-    body: JSON.stringify({ assignmentId: id }),
+    body: JSON.stringify({ assignmentId: id, familyId }),
   });
   if (res.ok) await loadState();
   else alert(errorMessage(res.data?.error));
@@ -381,6 +383,7 @@ function errorMessage(code) {
     case "saturday_closed":       return t("err_saturday_closed");
     case "saturday_past":         return t("err_saturday_past");
     case "family_already_booked": return t("err_family_already_booked");
+    case "not_your_slot":         return t("err_not_your_slot");
     default:                      return t("err_generic");
   }
 }
