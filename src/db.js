@@ -75,6 +75,14 @@ export async function claimSlot(db, { saturdayId, slot, familyId }) {
     .first();
   if ((usedRow?.c || 0) >= fam.quota) return { error: "quota_reached" };
 
+  const already = await db
+    .prepare(
+      "SELECT 1 FROM assignments WHERE saturday_id = ? AND family_id = ?",
+    )
+    .bind(saturdayId, familyId)
+    .first();
+  if (already) return { error: "family_already_booked" };
+
   try {
     const res = await db
       .prepare(
@@ -85,15 +93,24 @@ export async function claimSlot(db, { saturdayId, slot, familyId }) {
     return { ok: true, id: res.meta?.last_row_id };
   } catch (err) {
     const msg = String(err && err.message || err);
-    if (msg.includes("UNIQUE")) return { error: "slot_taken" };
+    if (msg.includes("UNIQUE")) {
+      // Two UNIQUE indexes can trip here:
+      //   (saturday_id, slot)      -> another family just took this slot
+      //   (saturday_id, family_id) -> this family raced a second claim
+      // Disambiguate by checking which one now holds the row.
+      if (msg.includes("family_id") || msg.includes("family_sat")) {
+        return { error: "family_already_booked" };
+      }
+      return { error: "slot_taken" };
+    }
     throw err;
   }
 }
 
-export async function releaseSlot(db, assignmentId) {
+export async function releaseSlot(db, assignmentId, { familyId, isAdmin = false } = {}) {
   const row = await db
     .prepare(
-      `SELECT a.id, s.date
+      `SELECT a.id, a.family_id, s.date
          FROM assignments a
          JOIN saturdays s ON s.id = a.saturday_id
         WHERE a.id = ?`,
@@ -102,6 +119,7 @@ export async function releaseSlot(db, assignmentId) {
     .first();
   if (!row) return { error: "not_found" };
   if (row.date < todayIsoUtc()) return { error: "saturday_past" };
+  if (!isAdmin && Number(familyId) !== row.family_id) return { error: "not_your_slot" };
   await db.prepare("DELETE FROM assignments WHERE id = ?").bind(assignmentId).run();
   return { ok: true };
 }

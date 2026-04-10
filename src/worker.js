@@ -97,7 +97,11 @@ async function handleApi(request, env, url) {
   if (pathname === "/api/release" && method === "POST") {
     if (!(await hasFamilyAccess(request, env))) return json({ error: "unauthorized" }, 401);
     const body = await safeJson(request);
-    const res = await releaseSlot(env.DB, Number(body.assignmentId));
+    const isAdmin = await hasAdminAccess(request, env);
+    const res = await releaseSlot(env.DB, Number(body.assignmentId), {
+      familyId: Number(body.familyId),
+      isAdmin,
+    });
     if (res.error) return json(res, statusForError(res.error));
     return json(res);
   }
@@ -166,6 +170,8 @@ function statusForError(code) {
     case "quota_reached": return 409;
     case "saturday_closed": return 409;
     case "saturday_past": return 409;
+    case "family_already_booked": return 409;
+    case "not_your_slot": return 403;
     case "no_such_saturday":
     case "no_such_family":
     case "not_found":

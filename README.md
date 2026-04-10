@@ -91,8 +91,11 @@ in with `FAMILY_PASSWORD`, and you should see an empty schedule. Visit
 - [ ] Generating Saturdays creates rows (skip dates are honored)
 - [ ] Claiming an empty slot only asks for confirmation (no picker)
 - [ ] Claiming a taken slot returns "slot taken"
+- [ ] Same family claiming both slots of the same Saturday is blocked
 - [ ] Claiming past quota is blocked
 - [ ] Releasing a slot frees it
+- [ ] × release button only appears on the current family's own slots
+- [ ] Server rejects a release for another family (admin cookie bypasses)
 - [ ] Past Saturdays show no claim/release buttons, server rejects edits
 - [ ] Generating a Saturday with today's date in the past (back-test) renders as locked
 - [ ] Language toggle swaps FR ↔ EN everywhere

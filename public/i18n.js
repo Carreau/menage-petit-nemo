@@ -44,6 +44,10 @@ export const STRINGS = {
     err_quota_reached: "Cette famille a atteint son quota.",
     err_saturday_closed: "Ce samedi est fermé.",
     err_saturday_past: "Ce samedi est passé et ne peut plus être modifié.",
+    err_family_already_booked:
+      "Cette famille a déjà un créneau ce samedi.",
+    err_not_your_slot:
+      "Vous ne pouvez libérer que les créneaux de votre famille.",
     err_generic: "Une erreur est survenue.",
     no_families: "Aucune famille. L'admin doit en ajouter.",
     no_saturdays: "Aucun samedi. L'admin doit générer le planning.",
@@ -123,6 +127,10 @@ export const STRINGS = {
     err_quota_reached: "This family has reached its quota.",
     err_saturday_closed: "This Saturday is closed.",
     err_saturday_past: "This Saturday is in the past and can no longer be changed.",
+    err_family_already_booked:
+      "This family already has a slot on this Saturday.",
+    err_not_your_slot:
+      "You can only release your own family's slots.",
     err_generic: "Something went wrong.",
     no_families: "No families yet. The admin must add some.",
     no_saturdays: "No Saturdays yet. The admin must generate the schedule.",
