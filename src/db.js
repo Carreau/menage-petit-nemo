@@ -6,12 +6,18 @@ function todayIsoUtc() {
 
 export async function getState(db) {
   const [familiesRes, saturdaysRes, assignmentsRes] = await Promise.all([
-    db.prepare("SELECT id, name, quota, active, phone FROM families ORDER BY name COLLATE NOCASE").all(),
+    db.prepare(`
+      SELECT id, name, quota, active,
+             parent1_name, parent1_phone,
+             parent2_name, parent2_phone
+        FROM families
+       ORDER BY name COLLATE NOCASE
+    `).all(),
     db.prepare("SELECT id, date, note, closed FROM saturdays ORDER BY date").all(),
     db.prepare(`
-      SELECT a.id, a.saturday_id, a.family_id, a.slot, f.name AS family_name, f.phone AS family_phone
-      FROM assignments a
-      JOIN families f ON f.id = a.family_id
+      SELECT a.id, a.saturday_id, a.family_id, a.slot, f.name AS family_name
+        FROM assignments a
+        JOIN families f ON f.id = a.family_id
     `).all(),
   ]);
 
@@ -22,7 +28,10 @@ export async function getState(db) {
     name: f.name,
     quota: f.quota,
     active: !!f.active,
-    phone: f.phone || "",
+    parents: [
+      { name: f.parent1_name || "", phone: f.parent1_phone || "" },
+      { name: f.parent2_name || "", phone: f.parent2_phone || "" },
+    ],
     used: 0,
   }));
   const famById = new Map(families.map((f) => [f.id, f]));
@@ -44,7 +53,6 @@ export async function getState(db) {
       assignmentId: a.id,
       familyId: a.family_id,
       familyName: a.family_name,
-      familyPhone: a.family_phone || "",
     };
     const fam = famById.get(a.family_id);
     if (fam) fam.used += 1;
@@ -124,19 +132,36 @@ export async function releaseSlot(db, assignmentId, { familyId, isAdmin = false 
 
 // ---- Admin: families ----
 
-export async function createFamily(db, { name, quota, phone }) {
+function trimOrNull(v) {
+  const s = String(v || "").trim();
+  return s || null;
+}
+
+export async function createFamily(db, { name, quota, parents }) {
   const n = String(name || "").trim();
   if (!n) return { error: "name_required" };
   const q = Number.isFinite(Number(quota)) ? Number(quota) : 4;
-  const p = String(phone || "").trim() || null;
+  const p1 = parents?.[0] || {};
+  const p2 = parents?.[1] || {};
   const res = await db
-    .prepare("INSERT INTO families (name, quota, phone) VALUES (?, ?, ?)")
-    .bind(n, q, p)
+    .prepare(
+      `INSERT INTO families
+         (name, quota, parent1_name, parent1_phone, parent2_name, parent2_phone)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      n,
+      q,
+      trimOrNull(p1.name),
+      trimOrNull(p1.phone),
+      trimOrNull(p2.name),
+      trimOrNull(p2.phone),
+    )
     .run();
   return { ok: true, id: res.meta?.last_row_id };
 }
 
-export async function updateFamily(db, id, { name, quota, active, phone }) {
+export async function updateFamily(db, id, { name, quota, active, parents }) {
   const sets = [];
   const binds = [];
   if (name !== undefined) {
@@ -153,10 +178,17 @@ export async function updateFamily(db, id, { name, quota, active, phone }) {
     sets.push("active = ?");
     binds.push(active ? 1 : 0);
   }
-  if (phone !== undefined) {
-    const p = String(phone || "").trim();
-    sets.push("phone = ?");
-    binds.push(p || null);
+  if (parents !== undefined) {
+    const p1 = parents?.[0] || {};
+    const p2 = parents?.[1] || {};
+    sets.push("parent1_name = ?");
+    binds.push(trimOrNull(p1.name));
+    sets.push("parent1_phone = ?");
+    binds.push(trimOrNull(p1.phone));
+    sets.push("parent2_name = ?");
+    binds.push(trimOrNull(p2.name));
+    sets.push("parent2_phone = ?");
+    binds.push(trimOrNull(p2.phone));
   }
   if (!sets.length) return { ok: true };
   binds.push(id);

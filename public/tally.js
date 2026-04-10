@@ -71,14 +71,12 @@ function render() {
         .map((f) => {
           const cls =
             f.used >= f.quota ? "done" : f.used > 0 ? "partial" : "empty";
-          const phone = f.phone
-            ? `<a class="phone" href="tel:${encodeURIComponent(f.phone)}">${escapeHtml(f.phone)}</a>`
-            : "";
+          const parents = renderParentLines(f.parents || []);
           return `
             <div class="family ${cls}">
               <div class="family-main">
                 <span class="name">${escapeHtml(f.name)}</span>
-                ${phone}
+                ${parents}
               </div>
               <span class="tally">${t("quota_label", f.used, f.quota)}</span>
             </div>`;
@@ -106,6 +104,20 @@ function render() {
     </section>
   `;
   applyI18n();
+}
+
+function renderParentLines(parents) {
+  return (parents || [])
+    .filter((p) => p && (p.name || p.phone))
+    .map((p) => {
+      const name = p.name ? escapeHtml(p.name) : "";
+      const phone = p.phone
+        ? `<a class="phone" href="tel:${encodeURIComponent(p.phone)}">${escapeHtml(p.phone)}</a>`
+        : "";
+      const sep = name && phone ? " · " : "";
+      return `<div class="family-parent">${name}${sep}${phone}</div>`;
+    })
+    .join("");
 }
 
 function escapeHtml(s) {

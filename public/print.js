@@ -87,14 +87,20 @@ function render() {
             }</td>
           </tr>`;
       }
-      const slot = (a) =>
-        a
-          ? `<strong>${escapeHtml(a.familyName)}</strong>${
-              a.familyPhone
-                ? `<br/><span class="phone">${escapeHtml(a.familyPhone)}</span>`
-                : ""
-            }`
-          : `<span class="empty">—</span>`;
+      const slot = (a) => {
+        if (!a) return `<span class="empty">—</span>`;
+        const famRec = state.families.find((f) => f.id === a.familyId);
+        const parents = (famRec?.parents || [])
+          .filter((p) => p && (p.name || p.phone))
+          .map((p) => {
+            const parts = [];
+            if (p.name) parts.push(escapeHtml(p.name));
+            if (p.phone) parts.push(escapeHtml(p.phone));
+            return `<div class="phone">${parts.join(" · ")}</div>`;
+          })
+          .join("");
+        return `<strong>${escapeHtml(a.familyName)}</strong>${parents}`;
+      };
       return `
         <tr>
           <td>
