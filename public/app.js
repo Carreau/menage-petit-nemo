@@ -166,6 +166,15 @@ function render() {
   );
 
   const fam = currentFamily();
+  // Privacy: phones are only revealed on saturdays where the current family
+  // is also booked. Computed here so renderSaturday/renderSlot can look it up.
+  const mySaturdayIds = new Set(
+    fam
+      ? state.saturdays
+          .filter((s) => s.slots.some((a) => a && a.familyId === fam.id))
+          .map((s) => s.id)
+      : [],
+  );
   const banner =
     fam && fam.used >= fam.quota
       ? `<div class="badge" style="display:block;margin-bottom:10px;padding:8px 12px">${t(
@@ -204,7 +213,9 @@ function render() {
       </div>
       ${
         state.saturdays.length
-          ? `<div class="saturdays">${visibleSaturdays.map(renderSaturday).join("")}</div>`
+          ? `<div class="saturdays">${visibleSaturdays
+              .map((s) => renderSaturday(s, { showPhones: mySaturdayIds.has(s.id) }))
+              .join("")}</div>`
           : `<p>${t("no_saturdays")}</p>`
       }
     </section>
@@ -319,7 +330,7 @@ function icsEscape(s) {
     .replace(/\n/g, "\\n");
 }
 
-function renderSaturday(s) {
+function renderSaturday(s, { showPhones }) {
   if (s.closed) {
     return `
       <div class="saturday closed">
@@ -342,12 +353,12 @@ function renderSaturday(s) {
             : ""
         }${escapeHtml(s.note)}</div>
       </div>
-      ${renderSlot(s, 1)}
-      ${renderSlot(s, 2)}
+      ${renderSlot(s, 1, { showPhones })}
+      ${renderSlot(s, 2, { showPhones })}
     </div>`;
 }
 
-function renderSlot(sat, slot) {
+function renderSlot(sat, slot, { showPhones } = { showPhones: false }) {
   const a = sat.slots[slot - 1];
   if (a) {
     const fam = currentFamily();
@@ -365,7 +376,7 @@ function renderSlot(sat, slot) {
            data-ics='${JSON.stringify({ date: sat.date })}'>📅 ${t("add_to_calendar")}</button>`
       : "";
     const famRec = state.families.find((f) => f.id === a.familyId);
-    const parentsHtml = renderParentLines(famRec?.parents || []);
+    const parentsHtml = renderParentLines(famRec?.parents || [], { showPhone: showPhones });
     return `
       <div class="slot filled">
         <div class="slot-head">
@@ -560,12 +571,12 @@ function errorMessage(code) {
   }
 }
 
-function renderParentLines(parents) {
+function renderParentLines(parents, { showPhone }) {
   return (parents || [])
-    .filter((p) => p && (p.name || p.phone))
+    .filter((p) => p && (p.name || (showPhone && p.phone)))
     .map((p) => {
       const name = p.name ? escapeHtml(p.name) : "";
-      const phone = p.phone
+      const phone = showPhone && p.phone
         ? `<a class="slot-phone" href="tel:${encodeURIComponent(p.phone)}">${escapeHtml(p.phone)}</a>`
         : "";
       const sep = name && phone ? " · " : "";

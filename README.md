@@ -88,9 +88,11 @@ in with `FAMILY_PASSWORD`, and you should see an empty schedule. Visit
 - [ ] `/tally.html` shows the per-family counter and totals
 - [ ] Admin panel is blocked without the admin password
 - [ ] Adding a family appears on the main page
-- [ ] A family can have two parents with optional name + phone; both
-      parents show on the tally page and under the family name on
-      filled slots (phones are tel: links)
+- [ ] A family can have two parents with optional name + phone
+- [ ] On the schedule, phone numbers only appear on Saturdays where the
+      current family is also assigned (same-day privacy rule)
+- [ ] The tally page shows parent names but no phone numbers
+- [ ] The print page shows parent names but no phone numbers
 - [ ] Admin Overview → "Open print view" opens /print.html filtered to
       the selected date range and the browser print dialog can save it
       as PDF for display at the daycare
