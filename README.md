@@ -108,6 +108,8 @@ in with `FAMILY_PASSWORD`, and you should see an empty schedule. Visit
 - [ ] Language toggle swaps FR ↔ EN everywhere
 - [ ] Marking a Saturday **closed** removes its slots from the count
 - [ ] Reset (danger zone) clears all assignments
+- [ ] Clear all Saturdays (danger zone) deletes every Saturday and its
+      assignments; families are kept
 
 ## Deploying to Cloudflare
 

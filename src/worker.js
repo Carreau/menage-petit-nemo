@@ -21,6 +21,7 @@ import {
   updateSaturday,
   deleteSaturday,
   resetAssignments,
+  clearAllSaturdays,
 } from "./db.js";
 
 export default {
@@ -158,6 +159,11 @@ async function handleApi(request, env, url) {
 
     if (pathname === "/api/admin/reset" && method === "POST") {
       const res = await resetAssignments(env.DB);
+      return json(res);
+    }
+
+    if (pathname === "/api/admin/clear-saturdays" && method === "POST") {
+      const res = await clearAllSaturdays(env.DB);
       return json(res);
     }
   }

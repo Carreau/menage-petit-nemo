@@ -91,6 +91,9 @@ export const STRINGS = {
     danger_reset: "Réinitialiser toutes les affectations",
     danger_reset_confirm:
       "Effacer toutes les affectations (familles et samedis conservés) ?",
+    danger_clear_saturdays: "Effacer tous les samedis",
+    danger_clear_saturdays_confirm:
+      "Supprimer tous les samedis et toutes leurs affectations ? Les familles sont conservées.",
     overview_export: "Exporter (JSON)",
   },
   en: {
@@ -182,6 +185,9 @@ export const STRINGS = {
     danger_reset: "Reset all assignments",
     danger_reset_confirm:
       "Erase every assignment (families and Saturdays are kept)?",
+    danger_clear_saturdays: "Clear all Saturdays",
+    danger_clear_saturdays_confirm:
+      "Delete every Saturday and all their assignments? Families are kept.",
     overview_export: "Export (JSON)",
   },
 };

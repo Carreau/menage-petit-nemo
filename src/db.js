@@ -223,6 +223,15 @@ export async function resetAssignments(db) {
   return { ok: true };
 }
 
+export async function clearAllSaturdays(db) {
+  // Remove every saturday and its assignments. Families are kept.
+  await db.batch([
+    db.prepare("DELETE FROM assignments"),
+    db.prepare("DELETE FROM saturdays"),
+  ]);
+  return { ok: true };
+}
+
 function isIsoDate(s) {
   return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
