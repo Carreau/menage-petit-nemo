@@ -1,0 +1,66 @@
+# Deploy the Cloudflare Worker + apply D1 migrations.
+#
+# Triggers:
+#   - Push to main (auto-deploy)
+#   - Manual run via the Actions tab (workflow_dispatch)
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#
+#   CLOUDFLARE_API_TOKEN   A token with these permissions:
+#                            - Account · Workers Scripts · Edit
+#                            - Account · D1 · Edit
+#                            - Account · Workers R2 Storage · Edit (optional)
+#                          Create at https://dash.cloudflare.com/profile/api-tokens
+#                          using the "Edit Cloudflare Workers" template and
+#                          adding the D1 permission.
+#
+#   CLOUDFLARE_ACCOUNT_ID  Your Cloudflare account id (dashboard → Workers →
+#                          right sidebar).
+#
+# One-time setup before the first run:
+#
+#   1. `npm run db:create` locally, copy the printed database_id into
+#      wrangler.toml, commit and push.
+#   2. Set the three Worker secrets once by hand (they never flow through
+#      this workflow for safety):
+#        wrangler secret put FAMILY_PASSWORD
+#        wrangler secret put ADMIN_PASSWORD
+#        wrangler secret put COOKIE_SECRET
+#
+# After that, every push to main redeploys and runs any new migrations.
+
+name: Deploy to Cloudflare
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cf-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply D1 migrations
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: d1 migrations apply menage-petit-nemo --remote
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

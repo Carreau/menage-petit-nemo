@@ -167,6 +167,41 @@ npm run deploy
 Wrangler prints the Worker URL. Share it (plus the family password) with
 parents.
 
+## Deploying via GitHub Actions
+
+Once `wrangler.toml` has a real `database_id` and the three Worker
+secrets have been set once, you can let GitHub Actions handle subsequent
+deploys automatically. The workflow lives in
+`.github/workflows/deploy.yml`.
+
+**What it does** — on every push to `main` (or a manual run from the
+Actions tab) it:
+
+1. Applies any new D1 migrations to the remote database.
+2. Runs `wrangler deploy`.
+
+**Repository secrets** — go to *Settings → Secrets and variables →
+Actions* and add:
+
+| Secret | Where to get it |
+| --- | --- |
+| `CLOUDFLARE_API_TOKEN` | [Create a token](https://dash.cloudflare.com/profile/api-tokens) using the **Edit Cloudflare Workers** template, then add the **Account · D1 · Edit** permission |
+| `CLOUDFLARE_ACCOUNT_ID` | Dashboard → Workers → right sidebar |
+
+**Worker secrets stay manual** — `FAMILY_PASSWORD`, `ADMIN_PASSWORD` and
+`COOKIE_SECRET` are set once via `wrangler secret put …` on your
+machine. They deliberately never flow through the workflow (keeps them
+off the GitHub logs and out of the repo's secret store).
+
+**First deploy checklist**
+
+- [ ] `npm run db:create` has been run and `database_id` filled in in
+      `wrangler.toml` (committed and pushed)
+- [ ] The three Worker secrets are set (`wrangler secret put ...`)
+- [ ] `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` added as
+      repository secrets
+- [ ] Push to `main` (or run the workflow manually from the Actions tab)
+
 ## Data model
 
 See `migrations/0001_init.sql` for the canonical schema.
@@ -187,6 +222,9 @@ UI reloads the state.
 
 ```
 .
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
 ├── migrations/
 │   └── 0001_init.sql
 ├── public/              # static assets served by the Worker
