@@ -41,6 +41,9 @@ export const STRINGS = {
     claim_confirm_title: "Prendre ce créneau ?",
     claim_confirm_body: (fam, date) =>
       `Inscrire ${fam} pour le ménage du ${date} ?`,
+    pick_family_title: "Choisir une famille",
+    pick_family_help:
+      "Sélectionnez la famille à affecter à ce créneau (correction admin).",
     quota_info_banner: (fam, used, quota) =>
       `${fam} a atteint ou dépassé son quota (${used}/${quota}). Vous pouvez toujours prendre des créneaux si besoin.`,
     confirm: "Confirmer",
@@ -88,6 +91,9 @@ export const STRINGS = {
     danger_reset: "Réinitialiser toutes les affectations",
     danger_reset_confirm:
       "Effacer toutes les affectations (familles et samedis conservés) ?",
+    danger_clear_saturdays: "Effacer tous les samedis",
+    danger_clear_saturdays_confirm:
+      "Supprimer tous les samedis et toutes leurs affectations ? Les familles sont conservées.",
     overview_export: "Exporter (JSON)",
   },
   en: {
@@ -130,6 +136,9 @@ export const STRINGS = {
     claim_confirm_title: "Take this slot?",
     claim_confirm_body: (fam, date) =>
       `Sign ${fam} up for cleaning on ${date}?`,
+    pick_family_title: "Pick a family",
+    pick_family_help:
+      "Select the family to assign to this slot (admin correction).",
     quota_info_banner: (fam, used, quota) =>
       `${fam} has reached or exceeded the quota (${used}/${quota}). You can still take slots if needed.`,
     confirm: "Confirm",
@@ -176,6 +185,9 @@ export const STRINGS = {
     danger_reset: "Reset all assignments",
     danger_reset_confirm:
       "Erase every assignment (families and Saturdays are kept)?",
+    danger_clear_saturdays: "Clear all Saturdays",
+    danger_clear_saturdays_confirm:
+      "Delete every Saturday and all their assignments? Families are kept.",
     overview_export: "Export (JSON)",
   },
 };
