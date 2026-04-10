@@ -84,6 +84,19 @@ header.top h1 {
 }
 header.top .sub { color: var(--muted); font-size: 14px; }
 header.top .spacer { flex: 1; }
+header.top .you-are {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: var(--ink);
+  font-size: 14px;
+}
+header.top .you-are .lbl { color: var(--muted); }
+header.top .nav { display: flex; gap: 12px; }
+header.top .nav a { font-size: 14px; }
 
 main {
   max-width: 1080px;
@@ -151,6 +164,8 @@ main {
   align-items: center;
 }
 .saturday.closed { background: #fbf6f5; color: var(--muted); }
+.saturday.past { background: #f7f8fb; color: var(--muted); opacity: 0.85; }
+.saturday.past .slot { background: #f2f4f8; border-style: solid; }
 .saturday .date { font-weight: 600; }
 .saturday .note { color: var(--muted); font-size: 13px; }
 .saturday .slot {

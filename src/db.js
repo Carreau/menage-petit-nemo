@@ -1,5 +1,9 @@
 // D1 query helpers. Keeps SQL out of the request handlers.
 
+function todayIsoUtc() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export async function getState(db) {
   const [familiesRes, saturdaysRes, assignmentsRes] = await Promise.all([
     db.prepare("SELECT id, name, quota, active FROM families ORDER BY name COLLATE NOCASE").all(),
@@ -10,6 +14,8 @@ export async function getState(db) {
       JOIN families f ON f.id = a.family_id
     `).all(),
   ]);
+
+  const today = todayIsoUtc();
 
   const families = (familiesRes.results || []).map((f) => ({
     id: f.id,
@@ -25,6 +31,7 @@ export async function getState(db) {
     date: s.date,
     note: s.note || "",
     closed: !!s.closed,
+    past: s.date < today,
     slots: [null, null], // index 0 -> slot 1, index 1 -> slot 2
   }));
   const satById = new Map(saturdays.map((s) => [s.id, s]));
@@ -41,18 +48,19 @@ export async function getState(db) {
     if (fam) fam.used += 1;
   }
 
-  return { families, saturdays };
+  return { families, saturdays, today };
 }
 
 export async function claimSlot(db, { saturdayId, slot, familyId }) {
   if (![1, 2].includes(Number(slot))) return { error: "bad_slot" };
 
   const sat = await db
-    .prepare("SELECT id, closed FROM saturdays WHERE id = ?")
+    .prepare("SELECT id, date, closed FROM saturdays WHERE id = ?")
     .bind(saturdayId)
     .first();
   if (!sat) return { error: "no_such_saturday" };
   if (sat.closed) return { error: "saturday_closed" };
+  if (sat.date < todayIsoUtc()) return { error: "saturday_past" };
 
   const fam = await db
     .prepare("SELECT id, quota, active FROM families WHERE id = ?")
@@ -83,11 +91,18 @@ export async function claimSlot(db, { saturdayId, slot, familyId }) {
 }
 
 export async function releaseSlot(db, assignmentId) {
-  const res = await db
-    .prepare("DELETE FROM assignments WHERE id = ?")
+  const row = await db
+    .prepare(
+      `SELECT a.id, s.date
+         FROM assignments a
+         JOIN saturdays s ON s.id = a.saturday_id
+        WHERE a.id = ?`,
+    )
     .bind(assignmentId)
-    .run();
-  if (!res.meta?.changes) return { error: "not_found" };
+    .first();
+  if (!row) return { error: "not_found" };
+  if (row.date < todayIsoUtc()) return { error: "saturday_past" };
+  await db.prepare("DELETE FROM assignments WHERE id = ?").bind(assignmentId).run();
   return { ok: true };
 }
 

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Compteur — Ménage Petit Nemo</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="top">
+      <h1 data-i18n="app_title"></h1>
+      <span class="sub" data-i18n="tally_heading"></span>
+      <span class="spacer"></span>
+      <nav class="nav">
+        <a href="/" data-i18n="schedule_link"></a>
+      </nav>
+      <button id="langToggle" class="link"></button>
+      <a href="/admin.html" data-i18n="admin_link"></a>
+      <button id="logoutBtn" class="link hidden" data-i18n="logout"></button>
+    </header>
+
+    <main id="root"></main>
+
+    <script type="module" src="/tally.js"></script>
+  </body>
+</html>

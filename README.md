@@ -83,13 +83,18 @@ in with `FAMILY_PASSWORD`, and you should see an empty schedule. Visit
 
 - [ ] Wrong family password is rejected
 - [ ] Correct family password lets you see the schedule
+- [ ] After login, a "who are you?" dialog picks the current family
+- [ ] Current family is shown in the header with a **Change** button
+- [ ] `/tally.html` shows the per-family counter and totals
 - [ ] Admin panel is blocked without the admin password
 - [ ] Adding a family appears on the main page
 - [ ] Generating Saturdays creates rows (skip dates are honored)
-- [ ] Claiming an empty slot fills it
+- [ ] Claiming an empty slot only asks for confirmation (no picker)
 - [ ] Claiming a taken slot returns "slot taken"
 - [ ] Claiming past quota is blocked
 - [ ] Releasing a slot frees it
+- [ ] Past Saturdays show no claim/release buttons, server rejects edits
+- [ ] Generating a Saturday with today's date in the past (back-test) renders as locked
 - [ ] Language toggle swaps FR ↔ EN everywhere
 - [ ] Marking a Saturday **closed** removes its slots from the count
 - [ ] Reset (danger zone) clears all assignments
@@ -162,8 +167,10 @@ UI reloads the state.
 │   └── 0001_init.sql
 ├── public/              # static assets served by the Worker
 │   ├── index.html
+│   ├── tally.html
 │   ├── admin.html
 │   ├── app.js
+│   ├── tally.js
 │   ├── admin.js
 │   ├── i18n.js
 │   └── styles.css
