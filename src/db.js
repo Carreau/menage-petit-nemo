@@ -78,7 +78,7 @@ function safeParse(s) {
 export async function getState(db) {
   const [familiesRes, saturdaysRes, assignmentsRes, lastModRes] = await Promise.all([
     db.prepare(`
-      SELECT id, name, quota, active,
+      SELECT id, name, quota, active, local,
              parent1_name, parent1_phone,
              parent2_name, parent2_phone
         FROM families
@@ -101,6 +101,7 @@ export async function getState(db) {
     name: f.name,
     quota: f.quota,
     active: !!f.active,
+    local: f.local === "baby_nemo" ? "baby_nemo" : "petit_nemo",
     parents: [
       { name: f.parent1_name || "", phone: f.parent1_phone || "" },
       { name: f.parent2_name || "", phone: f.parent2_phone || "" },
@@ -146,11 +147,14 @@ export async function claimSlot(db, { saturdayId, slot, familyId }, { isAdmin = 
   if (!isAdmin && sat.date < todayIsoUtc()) return { error: "saturday_past" };
 
   const fam = await db
-    .prepare("SELECT id, name, quota, active FROM families WHERE id = ?")
+    .prepare("SELECT id, name, quota, active, local FROM families WHERE id = ?")
     .bind(familyId)
     .first();
   if (!fam) return { error: "no_such_family" };
   if (!fam.active) return { error: "family_inactive" };
+  // Only Petit Nemo families can claim slots on this schedule for now.
+  // Baby Nemo will get its own schedule later.
+  if (fam.local === "baby_nemo") return { error: "wrong_local" };
 
   // Note: quota is informational only. Families are allowed to go over.
 
@@ -229,21 +233,23 @@ function trimOrNull(v) {
   return s || null;
 }
 
-export async function createFamily(db, { name, quota, parents }) {
+export async function createFamily(db, { name, quota, parents, local }) {
   const n = String(name || "").trim();
   if (!n) return { error: "name_required" };
   const q = Number.isFinite(Number(quota)) ? Number(quota) : 4;
+  const l = local === "baby_nemo" ? "baby_nemo" : "petit_nemo";
   const p1 = parents?.[0] || {};
   const p2 = parents?.[1] || {};
   const res = await db
     .prepare(
       `INSERT INTO families
-         (name, quota, parent1_name, parent1_phone, parent2_name, parent2_phone)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+         (name, quota, local, parent1_name, parent1_phone, parent2_name, parent2_phone)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       n,
       q,
+      l,
       trimOrNull(p1.name),
       trimOrNull(p1.phone),
       trimOrNull(p2.name),
@@ -284,7 +290,7 @@ export async function bulkCreateFamilies(db, families) {
   return { ok: true, count };
 }
 
-export async function updateFamily(db, id, { name, quota, active, parents }) {
+export async function updateFamily(db, id, { name, quota, active, parents, local }) {
   const sets = [];
   const binds = [];
   if (name !== undefined) {
@@ -300,6 +306,10 @@ export async function updateFamily(db, id, { name, quota, active, parents }) {
   if (active !== undefined) {
     sets.push("active = ?");
     binds.push(active ? 1 : 0);
+  }
+  if (local !== undefined) {
+    sets.push("local = ?");
+    binds.push(local === "baby_nemo" ? "baby_nemo" : "petit_nemo");
   }
   if (parents !== undefined) {
     const p1 = parents?.[0] || {};
@@ -329,7 +339,7 @@ export async function updateFamily(db, id, { name, quota, active, parents }) {
       name !== undefined ? String(name).trim() : existing?.name || null,
     details: {
       changed: Object.fromEntries(
-        Object.entries({ name, quota, active, parents }).filter(
+        Object.entries({ name, quota, active, parents, local }).filter(
           ([, v]) => v !== undefined,
         ),
       ),

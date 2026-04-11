@@ -61,7 +61,11 @@ async function boot() {
 function render() {
   if (!state) return;
 
-  const active = state.families.filter((f) => f.active);
+  // Only show Petit Nemo families — Baby Nemo has no schedule yet so
+  // counting against a quota is meaningless.
+  const active = state.families.filter(
+    (f) => f.active && f.local !== "baby_nemo",
+  );
   const totalUsed = active.reduce((acc, f) => acc + f.used, 0);
   const totalQuota = active.reduce((acc, f) => acc + f.quota, 0);
   const totalRemaining = Math.max(0, totalQuota - totalUsed);

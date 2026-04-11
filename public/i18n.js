@@ -113,6 +113,12 @@ export const STRINGS = {
     family_phone: "Téléphone",
     family_quota: "Quota",
     family_active: "Active",
+    local_label: "Section",
+    bn_placeholder_title: "Planning Baby Nemo à venir",
+    bn_placeholder_help:
+      "Le planning de ménage pour la section Baby Nemo sera ajouté prochainement. En attendant, vous pouvez changer de famille via le bouton « Changer » en haut si vous êtes aussi inscrit en Petit Nemo.",
+    err_wrong_local:
+      "Cette famille n'appartient pas à la section Petit Nemo.",
     parent1: "Parent 1",
     parent2: "Parent 2",
     parent_name: "Prénom",
@@ -285,6 +291,12 @@ export const STRINGS = {
     family_phone: "Phone",
     family_quota: "Quota",
     family_active: "Active",
+    local_label: "Section",
+    bn_placeholder_title: "Baby Nemo schedule coming soon",
+    bn_placeholder_help:
+      "The cleaning schedule for the Baby Nemo section will be added later. In the meantime, if you're also registered in Petit Nemo you can switch with the \"Change\" button at the top.",
+    err_wrong_local:
+      "This family doesn't belong to the Petit Nemo section.",
     parent1: "Parent 1",
     parent2: "Parent 2",
     parent_name: "First name",

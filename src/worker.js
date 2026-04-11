@@ -249,6 +249,7 @@ function statusForError(code) {
     case "saturday_closed": return 409;
     case "saturday_past": return 409;
     case "family_already_booked": return 409;
+    case "wrong_local": return 409;
     case "not_your_slot": return 403;
     case "no_such_saturday":
     case "no_such_family":

@@ -126,7 +126,25 @@ async function loadState() {
   }
 
   updateHeader();
+  // Baby Nemo doesn't have a schedule yet — show a placeholder card
+  // instead of the Petit Nemo schedule. The header still has the
+  // "Change" button so the family can hop over to Petit Nemo if they
+  // picked the wrong one.
+  if (currentFamily().local === "baby_nemo") {
+    renderBabyNemoPlaceholder();
+    return;
+  }
   render();
+}
+
+function renderBabyNemoPlaceholder() {
+  root.innerHTML = `
+    <section class="card empty-state">
+      <h2 data-i18n="bn_placeholder_title"></h2>
+      <p data-i18n="bn_placeholder_help"></p>
+    </section>
+  `;
+  applyI18n();
 }
 
 function renderEmptyState() {
@@ -489,11 +507,13 @@ function openFamilyPicker({ allowCancel }) {
           .filter((p) => p && p.name)
           .map((p) => escapeHtml(p.name))
           .join(" · ");
+        const localLabel = f.local === "baby_nemo" ? "Baby Nemo" : "Petit Nemo";
         return `
           <button type="button" class="family-pick${isCurrent ? " current" : ""}" data-id="${f.id}">
             ${renderAvatar(f.name, "lg")}
             <span class="family-pick-text">
               <span class="family-pick-name">${escapeHtml(f.name)}</span>
+              <span class="local-badge local-${f.local}">${localLabel}</span>
               ${parentNames ? `<span class="family-pick-parents">${parentNames}</span>` : ""}
             </span>
           </button>`;
@@ -596,6 +616,7 @@ function errorMessage(code, data) {
     case "saturday_past":         return t("err_saturday_past");
     case "family_already_booked": return t("err_family_already_booked");
     case "not_your_slot":         return t("err_not_your_slot");
+    case "wrong_local":           return t("err_wrong_local");
   }
   // Fall through: if the server sent an internal_error with a message,
   // include it as a technical suffix so the admin can file it upstream.

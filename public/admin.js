@@ -168,6 +168,12 @@ function renderFamiliesTab() {
       <div class="family-card family-card-new">
         <div class="family-card-head">
           <input type="text" id="newName" placeholder="" />
+          <label><span data-i18n="local_label"></span>
+            <select id="newLocal">
+              <option value="petit_nemo" selected>Petit Nemo</option>
+              <option value="baby_nemo">Baby Nemo</option>
+            </select>
+          </label>
           <label><span data-i18n="family_quota"></span>
             <input type="number" id="newQuota" min="0" value="4" />
           </label>
@@ -209,6 +215,9 @@ function renderFamilyViewCard(f) {
   const inactive = f.active
     ? ""
     : `<span class="inactive-badge" data-i18n="inactive"></span>`;
+  const localBadge = `<span class="local-badge local-${f.local}">${
+    f.local === "baby_nemo" ? "Baby Nemo" : "Petit Nemo"
+  }</span>`;
   return `
     <div class="family-card family-card-view${f.active ? "" : " is-inactive"}" data-id="${f.id}">
       <div class="family-view-head">
@@ -216,6 +225,7 @@ function renderFamilyViewCard(f) {
         <div class="family-view-title">
           <div class="family-view-name">${escapeHtml(f.name)} ${inactive}</div>
           <div class="family-view-meta">
+            ${localBadge}
             <span class="badge">${f.used} / ${f.quota}</span>
           </div>
         </div>
@@ -239,6 +249,12 @@ function renderFamilyEditCard(f) {
     <div class="family-card family-card-edit" data-id="${f.id}">
       <div class="family-card-head">
         <input class="fname" type="text" value="${attr(f.name)}" />
+        <label><span data-i18n="local_label"></span>
+          <select class="flocal">
+            <option value="petit_nemo" ${f.local !== "baby_nemo" ? "selected" : ""}>Petit Nemo</option>
+            <option value="baby_nemo"  ${f.local === "baby_nemo" ? "selected" : ""}>Baby Nemo</option>
+          </select>
+        </label>
         <label><span data-i18n="family_quota"></span>
           <input class="fquota" type="number" min="0" value="${f.quota}" />
         </label>
@@ -326,6 +342,7 @@ function wireFamiliesTab() {
   document.getElementById("addFamily").addEventListener("click", async () => {
     const name = document.getElementById("newName").value.trim();
     const quota = Number(document.getElementById("newQuota").value || 4);
+    const local = document.getElementById("newLocal").value;
     const parents = [
       {
         name: document.getElementById("newP1Name").value,
@@ -339,7 +356,7 @@ function wireFamiliesTab() {
     if (!name) return;
     const res = await api("/api/admin/families", {
       method: "POST",
-      body: JSON.stringify({ name, quota, parents }),
+      body: JSON.stringify({ name, quota, parents, local }),
     });
     if (!res.ok) return alert(t("err_generic"));
     await loadState();
@@ -384,6 +401,7 @@ function wireFamiliesTab() {
       const name = card.querySelector(".fname").value.trim();
       const quota = Number(card.querySelector(".fquota").value);
       const active = card.querySelector(".factive").checked;
+      const local = card.querySelector(".flocal").value;
       const parents = [
         {
           name: card.querySelector(".p1name").value,
@@ -396,7 +414,7 @@ function wireFamiliesTab() {
       ];
       const res = await api(`/api/admin/families/${id}`, {
         method: "PATCH",
-        body: JSON.stringify({ name, quota, active, parents }),
+        body: JSON.stringify({ name, quota, active, local, parents }),
       });
       if (!res.ok) return alert(t("err_generic"));
       editingFamilyId = null;
