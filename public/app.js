@@ -570,16 +570,30 @@ function confirmClaim({ saturdayId, slot, date, past }) {
     return;
   }
   // Build the "who's coming" checkboxes — one per parent that has a
-  // name. Both default to checked. If neither parent has a name
-  // recorded, skip the picker and default to both participating.
+  // name. Both default to checked. If fewer than two parents have a
+  // name recorded there's nothing to choose, so we skip the dialog
+  // entirely and submit the claim directly.
   const parents = fam.parents || [];
   const picks = parents.map((p, i) => ({
     index: i,
     name: p?.name || "",
     hasName: !!p?.name,
   }));
-  const participatingHtml = picks
-    .filter((p) => p.hasName)
+  const named = picks.filter((p) => p.hasName);
+  if (named.length < 2) {
+    const participating = [false, false];
+    if (named.length === 1) {
+      participating[named[0].index] = true;
+    } else {
+      // No named parents at all — claim on behalf of both so the
+      // server's no_parent_participating guard doesn't reject us.
+      participating[0] = true;
+      participating[1] = true;
+    }
+    submitClaimDirect({ saturdayId, slot, familyId: fam.id, participating });
+    return;
+  }
+  const participatingHtml = named
     .map(
       (p) => `
         <label class="participate-row">
@@ -645,6 +659,19 @@ function confirmClaim({ saturdayId, slot, date, past }) {
     err.textContent = errorMessage(res.data?.error, res.data);
     if (res.data?.error === "slot_taken") await loadState();
   });
+}
+
+async function submitClaimDirect(body) {
+  const res = await api("/api/claim", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  if (res.ok) {
+    await loadState();
+    return;
+  }
+  alert(errorMessage(res.data?.error, res.data));
+  if (res.data?.error === "slot_taken") await loadState();
 }
 
 async function confirmRelease({ id, name, familyId }) {
