@@ -33,8 +33,21 @@ export default {
       try {
         return await handleApi(request, env, url);
       } catch (err) {
-        console.error("API error", err);
-        return json({ error: "internal_error" }, 500);
+        // Log as much context as we have so `wrangler tail` is useful.
+        const method = request.method;
+        const path = url.pathname;
+        const message = err?.message || String(err);
+        const stack = err?.stack || "";
+        console.error(`API error ${method} ${path}: ${message}\n${stack}`);
+        return json(
+          {
+            error: "internal_error",
+            message,
+            path,
+            method,
+          },
+          500,
+        );
       }
     }
 
@@ -48,6 +61,17 @@ export default {
 async function handleApi(request, env, url) {
   const { pathname } = url;
   const method = request.method.toUpperCase();
+
+  // --- Health / diagnostics (public, no auth) ---
+  //
+  // Returns presence of bindings and secrets (never the actual values)
+  // plus basic DB row counts. Deliberately public: if admin login is
+  // broken because COOKIE_SECRET is missing, an authenticated health
+  // check would be useless for diagnosis.
+
+  if (pathname === "/api/health" && method === "GET") {
+    return json(await healthCheck(env));
+  }
 
   // --- Auth endpoints (no cookie required to call) ---
 
@@ -209,4 +233,53 @@ async function safeJson(request) {
   } catch {
     return {};
   }
+}
+
+// Health check — reports which bindings and secrets the Worker can see
+// and tries a few DB queries. Values are never exposed, only presence.
+async function healthCheck(env) {
+  const status = {
+    ok: true,
+    time: new Date().toISOString(),
+    bindings: {
+      DB: !!env.DB,
+      ASSETS: !!env.ASSETS,
+    },
+    secrets: {
+      FAMILY_PASSWORD: !!env.FAMILY_PASSWORD,
+      ADMIN_PASSWORD: !!env.ADMIN_PASSWORD,
+      COOKIE_SECRET: !!env.COOKIE_SECRET,
+    },
+    db: null,
+  };
+  if (!status.bindings.DB) {
+    status.ok = false;
+  } else {
+    try {
+      const [families, saturdays, assignments, lastMod] = await Promise.all([
+        env.DB.prepare("SELECT COUNT(*) AS c FROM families").first(),
+        env.DB.prepare("SELECT COUNT(*) AS c FROM saturdays").first(),
+        env.DB.prepare("SELECT COUNT(*) AS c FROM assignments").first(),
+        env.DB.prepare("SELECT value FROM config WHERE key = 'last_modified'").first(),
+      ]);
+      status.db = {
+        ok: true,
+        families: families?.c ?? 0,
+        saturdays: saturdays?.c ?? 0,
+        assignments: assignments?.c ?? 0,
+        lastModified: lastMod?.value || null,
+      };
+    } catch (err) {
+      status.ok = false;
+      status.db = { ok: false, error: err?.message || String(err) };
+    }
+  }
+  if (
+    !status.secrets.FAMILY_PASSWORD ||
+    !status.secrets.ADMIN_PASSWORD ||
+    !status.secrets.COOKIE_SECRET
+  ) {
+    status.ok = false;
+  }
+  return status;
 }
