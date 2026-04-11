@@ -61,11 +61,10 @@ async function boot() {
 function render() {
   if (!state) return;
 
-  // Only show Petit Nemo families — Baby Nemo has no schedule yet so
-  // counting against a quota is meaningless.
-  const active = state.families.filter(
-    (f) => f.active && f.local !== "baby_nemo",
-  );
+  // Show every active family from both sections. The BN count is
+  // currently always 0 (no schedule yet) but listing them keeps the
+  // tally page honest about who's in which section.
+  const active = state.families.filter((f) => f.active);
   const totalUsed = active.reduce((acc, f) => acc + f.used, 0);
   const totalQuota = active.reduce((acc, f) => acc + f.quota, 0);
   const totalRemaining = Math.max(0, totalQuota - totalUsed);
@@ -76,11 +75,13 @@ function render() {
           const cls =
             f.used >= f.quota ? "done" : f.used > 0 ? "partial" : "empty";
           const parents = renderParentLines(f.parents || []);
+          const localLabel = f.local === "baby_nemo" ? "Baby Nemo" : "Petit Nemo";
           return `
             <div class="family ${cls}">
               ${renderAvatar(f.name, "md")}
               <div class="family-main">
                 <span class="name">${escapeHtml(f.name)}</span>
+                <span class="local-badge local-${f.local}">${localLabel}</span>
                 ${parents}
               </div>
               <span class="tally">${t("quota_label", f.used, f.quota)}</span>

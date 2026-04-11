@@ -126,14 +126,6 @@ async function loadState() {
   }
 
   updateHeader();
-  // Baby Nemo doesn't have a schedule yet — show a placeholder card
-  // instead of the Petit Nemo schedule. The header still has the
-  // "Change" button so the family can hop over to Petit Nemo if they
-  // picked the wrong one.
-  if (currentFamily().local === "baby_nemo") {
-    renderBabyNemoPlaceholder();
-    return;
-  }
   render();
 }
 
@@ -197,6 +189,14 @@ function renderLogin() {
 
 function render() {
   if (!state) return;
+  // Baby Nemo doesn't have a schedule yet — show the placeholder card
+  // instead of the Petit Nemo schedule. Checked here (not just in
+  // loadState) so that the "Change family" button can swap between
+  // sections and the view refreshes to match.
+  if (currentFamily()?.local === "baby_nemo") {
+    renderBabyNemoPlaceholder();
+    return;
+  }
   const openCount = state.saturdays.filter(
     (s) => !s.closed && !s.past && (s.slots[0] === null || s.slots[1] === null),
   ).length;
