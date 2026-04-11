@@ -263,7 +263,6 @@ function renderSaturdaysTab() {
         <td><input class="snote" type="text" value="${attr(s.note)}" /></td>
         <td><label><input class="sclosed" type="checkbox" ${s.closed ? "checked" : ""}/> <span data-i18n="mark_closed"></span></label></td>
         <td style="text-align:right">
-          <button class="save primary" data-i18n="save"></button>
           <button class="del danger" data-i18n="delete"></button>
         </td>
       </tr>`,
@@ -285,6 +284,10 @@ function renderSaturdaysTab() {
       </div>
     </div>
     <div class="card">
+      <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:10px">
+        <h2 style="margin:0" data-i18n="tab_saturdays"></h2>
+        <button class="primary" id="saveAllBtn" data-i18n="save_all"></button>
+      </div>
       <table>
         <thead><tr><th data-i18n="start_date"></th><th data-i18n="note_placeholder"></th><th data-i18n="mark_closed"></th><th></th></tr></thead>
         <tbody>${rows}</tbody>
@@ -308,18 +311,37 @@ function wireSaturdaysTab() {
     alert(t("generated_count", res.data.count || 0));
     await loadState();
   });
-  for (const row of document.querySelectorAll("tr[data-id]")) {
-    const id = row.dataset.id;
-    row.querySelector(".save").addEventListener("click", async () => {
+
+  document.getElementById("saveAllBtn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = t("saving");
+    const requests = [];
+    for (const row of document.querySelectorAll("tr[data-id]")) {
+      const id = row.dataset.id;
       const note = row.querySelector(".snote").value;
       const closed = row.querySelector(".sclosed").checked;
-      const res = await api(`/api/admin/saturdays/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ note, closed }),
-      });
-      if (!res.ok) return alert(t("err_generic"));
-      await loadState();
-    });
+      requests.push(
+        api(`/api/admin/saturdays/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ note, closed }),
+        }),
+      );
+    }
+    const results = await Promise.all(requests);
+    const failed = results.filter((r) => !r.ok).length;
+    if (failed) {
+      btn.disabled = false;
+      btn.textContent = original;
+      alert(t("err_generic"));
+      return;
+    }
+    await loadState(); // re-renders the tab; button is replaced
+  });
+
+  for (const row of document.querySelectorAll("tr[data-id]")) {
+    const id = row.dataset.id;
     row.querySelector(".del").addEventListener("click", async () => {
       const sat = state.saturdays.find((s) => s.id === Number(id));
       if (!confirm(t("confirm_delete_saturday", sat?.date || ""))) return;
