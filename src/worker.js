@@ -15,6 +15,7 @@ import {
   claimSlot,
   releaseSlot,
   createFamily,
+  bulkCreateFamilies,
   updateFamily,
   deleteFamily,
   createSaturdaysInRange,
@@ -120,6 +121,12 @@ async function handleApi(request, env, url) {
     if (pathname === "/api/admin/families" && method === "POST") {
       const body = await safeJson(request);
       const res = await createFamily(env.DB, body);
+      return json(res, res.error ? 400 : 200);
+    }
+
+    if (pathname === "/api/admin/families/import" && method === "POST") {
+      const body = await safeJson(request);
+      const res = await bulkCreateFamilies(env.DB, body.families);
       return json(res, res.error ? 400 : 200);
     }
 

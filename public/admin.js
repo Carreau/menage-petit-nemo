@@ -8,6 +8,9 @@ const logoutBtn = document.getElementById("logoutBtn");
 
 let state = null;
 let tab = "families";
+// IDs of family rows currently in edit mode. Defaults to view-only so
+// admins don't accidentally type into a row and forget to save.
+const editingFamilies = new Set();
 
 function applyI18n() {
   document.documentElement.lang = getLang();
@@ -124,38 +127,37 @@ function render() {
 
 // ---- Families tab ----
 
+// Same auto-avatar helpers as on the schedule and tally pages.
+function familyInitials(name) {
+  const parts = String(name || "").split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  const meaningful = parts.filter((p) => !/^(famille|family)$/i.test(p));
+  const useParts = meaningful.length ? meaningful : parts;
+  if (useParts.length === 1) {
+    const w = useParts[0].replace(/[^\p{L}]/gu, "");
+    return (w.slice(0, 2) || "?").toUpperCase();
+  }
+  return useParts.slice(0, 2).map((p) => p[0] || "").join("").toUpperCase();
+}
+function familyColor(name) {
+  let hash = 0;
+  const s = String(name || "");
+  for (let i = 0; i < s.length; i++) {
+    hash = (hash << 5) - hash + s.charCodeAt(i);
+    hash |= 0;
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue} 55% 45%)`;
+}
+function renderAvatar(name, size = "md") {
+  return `<span class="avatar avatar-${size}" style="background:${familyColor(name)}" aria-hidden="true">${escapeHtml(familyInitials(name))}</span>`;
+}
+
 function renderFamiliesTab() {
   const cards = state.families
-    .map((f) => {
-      const p1 = f.parents?.[0] || { name: "", phone: "" };
-      const p2 = f.parents?.[1] || { name: "", phone: "" };
-      return `
-        <div class="family-card" data-id="${f.id}">
-          <div class="family-card-head">
-            <input class="fname" type="text" value="${attr(f.name)}" />
-            <label><span data-i18n="family_quota"></span>
-              <input class="fquota" type="number" min="0" value="${f.quota}" />
-            </label>
-            <label><input class="factive" type="checkbox" ${f.active ? "checked" : ""}/>
-              <span data-i18n="family_active"></span></label>
-            <span class="badge">#${f.used}</span>
-          </div>
-          <div class="family-card-parent">
-            <span class="parent-label" data-i18n="parent1"></span>
-            <input class="p1name" type="text" placeholder="" value="${attr(p1.name)}" />
-            <input class="p1phone" type="tel" placeholder="" value="${attr(p1.phone)}" />
-          </div>
-          <div class="family-card-parent">
-            <span class="parent-label" data-i18n="parent2"></span>
-            <input class="p2name" type="text" placeholder="" value="${attr(p2.name)}" />
-            <input class="p2phone" type="tel" placeholder="" value="${attr(p2.phone)}" />
-          </div>
-          <div class="family-card-actions">
-            <button class="del danger" data-i18n="delete"></button>
-            <button class="save primary" data-i18n="save"></button>
-          </div>
-        </div>`;
-    })
+    .map((f) =>
+      editingFamilies.has(f.id) ? renderFamilyEditCard(f) : renderFamilyViewCard(f),
+    )
     .join("");
   return `
     <div class="card">
@@ -182,11 +184,134 @@ function renderFamiliesTab() {
         </div>
       </div>
     </div>
+    <div class="family-list-actions">
+      <button id="importFamiliesBtn" data-i18n="import_families"></button>
+      <button id="exportFamiliesBtn" data-i18n="export_families"></button>
+      <input type="file" id="importFamiliesFile" accept="application/json,.json" hidden />
+    </div>
     <div class="family-list">${cards}</div>
   `;
 }
 
+function renderFamilyViewCard(f) {
+  const p1 = f.parents?.[0] || { name: "", phone: "" };
+  const p2 = f.parents?.[1] || { name: "", phone: "" };
+  const parentRow = (label, p) => {
+    if (!p.name && !p.phone) return "";
+    const parts = [];
+    if (p.name) parts.push(escapeHtml(p.name));
+    if (p.phone) parts.push(escapeHtml(p.phone));
+    return `<div class="family-view-parent"><span class="lbl">${label}</span> ${parts.join(" · ")}</div>`;
+  };
+  const inactive = f.active
+    ? ""
+    : `<span class="inactive-badge" data-i18n="inactive"></span>`;
+  return `
+    <div class="family-card family-card-view${f.active ? "" : " is-inactive"}" data-id="${f.id}">
+      <div class="family-view-head">
+        ${renderAvatar(f.name, "md")}
+        <div class="family-view-title">
+          <div class="family-view-name">${escapeHtml(f.name)} ${inactive}</div>
+          <div class="family-view-meta">
+            <span class="badge">${f.used} / ${f.quota}</span>
+          </div>
+        </div>
+        <div class="family-view-actions">
+          <button class="edit primary" data-i18n="edit"></button>
+          <button class="del danger" data-i18n="delete"></button>
+        </div>
+      </div>
+      <div class="family-view-parents">
+        ${parentRow(t("parent1"), p1)}
+        ${parentRow(t("parent2"), p2)}
+      </div>
+    </div>
+  `;
+}
+
+function renderFamilyEditCard(f) {
+  const p1 = f.parents?.[0] || { name: "", phone: "" };
+  const p2 = f.parents?.[1] || { name: "", phone: "" };
+  return `
+    <div class="family-card family-card-edit" data-id="${f.id}">
+      <div class="family-card-head">
+        <input class="fname" type="text" value="${attr(f.name)}" />
+        <label><span data-i18n="family_quota"></span>
+          <input class="fquota" type="number" min="0" value="${f.quota}" />
+        </label>
+        <label><input class="factive" type="checkbox" ${f.active ? "checked" : ""}/>
+          <span data-i18n="family_active"></span></label>
+        <span class="badge">#${f.used}</span>
+      </div>
+      <div class="family-card-parent">
+        <span class="parent-label" data-i18n="parent1"></span>
+        <input class="p1name" type="text" placeholder="" value="${attr(p1.name)}" />
+        <input class="p1phone" type="tel" placeholder="" value="${attr(p1.phone)}" />
+      </div>
+      <div class="family-card-parent">
+        <span class="parent-label" data-i18n="parent2"></span>
+        <input class="p2name" type="text" placeholder="" value="${attr(p2.name)}" />
+        <input class="p2phone" type="tel" placeholder="" value="${attr(p2.phone)}" />
+      </div>
+      <div class="family-card-actions">
+        <button class="cancel" data-i18n="cancel"></button>
+        <button class="save primary" data-i18n="save"></button>
+      </div>
+    </div>
+  `;
+}
+
 function wireFamiliesTab() {
+  // ---- Import / Export buttons ----
+  const exportBtn = document.getElementById("exportFamiliesBtn");
+  exportBtn.addEventListener("click", () => {
+    const payload = {
+      families: state.families.map((f) => ({
+        name: f.name,
+        quota: f.quota,
+        active: f.active,
+        parents: f.parents,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `menage-petit-nemo-familles.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+  const importInput = document.getElementById("importFamiliesFile");
+  document.getElementById("importFamiliesBtn").addEventListener("click", () => {
+    if (!confirm(t("import_families_help"))) return;
+    importInput.click();
+  });
+  importInput.addEventListener("change", async () => {
+    const file = importInput.files?.[0];
+    importInput.value = "";
+    if (!file) return;
+    let parsed;
+    try {
+      parsed = JSON.parse(await file.text());
+    } catch {
+      alert(t("import_invalid"));
+      return;
+    }
+    const families = Array.isArray(parsed?.families) ? parsed.families : null;
+    if (!families) {
+      alert(t("import_invalid"));
+      return;
+    }
+    const res = await api("/api/admin/families/import", {
+      method: "POST",
+      body: JSON.stringify({ families }),
+    });
+    if (!res.ok) return alert(t("err_generic"));
+    alert(t("import_count", res.data.count || 0));
+    await loadState();
+  });
+
+  // ---- Add form (always editable, at the top of the tab) ----
   document.getElementById("newName").placeholder = t("family_name");
   document.getElementById("newP1Name").placeholder = t("parent_name");
   document.getElementById("newP1Phone").placeholder = t("parent_phone");
@@ -213,13 +338,36 @@ function wireFamiliesTab() {
     if (!res.ok) return alert(t("err_generic"));
     await loadState();
   });
-  for (const card of document.querySelectorAll(".family-card[data-id]")) {
-    const id = card.dataset.id;
+
+  // ---- View cards (default state): Edit + Delete ----
+  for (const card of document.querySelectorAll(".family-card-view[data-id]")) {
+    const id = Number(card.dataset.id);
+    card.querySelector(".edit").addEventListener("click", () => {
+      editingFamilies.add(id);
+      render();
+    });
+    card.querySelector(".del").addEventListener("click", async () => {
+      const fam = state.families.find((f) => f.id === id);
+      if (!confirm(t("confirm_delete_family", fam?.name || ""))) return;
+      const res = await api(`/api/admin/families/${id}`, { method: "DELETE" });
+      if (!res.ok) return alert(t("err_generic"));
+      editingFamilies.delete(id);
+      await loadState();
+    });
+  }
+
+  // ---- Edit cards (after clicking Edit): Save + Cancel ----
+  for (const card of document.querySelectorAll(".family-card-edit[data-id]")) {
+    const id = Number(card.dataset.id);
     card.querySelectorAll('input[type="text"], input[type="tel"]').forEach((i) => {
       if (i.classList.contains("p1name") || i.classList.contains("p2name"))
         i.placeholder = t("parent_name");
       if (i.classList.contains("p1phone") || i.classList.contains("p2phone"))
         i.placeholder = t("parent_phone");
+    });
+    card.querySelector(".cancel").addEventListener("click", () => {
+      editingFamilies.delete(id);
+      render();
     });
     card.querySelector(".save").addEventListener("click", async () => {
       const name = card.querySelector(".fname").value.trim();
@@ -240,13 +388,7 @@ function wireFamiliesTab() {
         body: JSON.stringify({ name, quota, active, parents }),
       });
       if (!res.ok) return alert(t("err_generic"));
-      await loadState();
-    });
-    card.querySelector(".del").addEventListener("click", async () => {
-      const name = card.querySelector(".fname").value.trim();
-      if (!confirm(t("confirm_delete_family", name))) return;
-      const res = await api(`/api/admin/families/${id}`, { method: "DELETE" });
-      if (!res.ok) return alert(t("err_generic"));
+      editingFamilies.delete(id);
       await loadState();
     });
   }
@@ -368,6 +510,9 @@ function renderOverviewTab() {
     .join("");
   const first = state.saturdays[0]?.date || "";
   const last = state.saturdays[state.saturdays.length - 1]?.date || "";
+  const lastModText = state.lastModified
+    ? `${t("last_modified")} : ${formatDateTime(state.lastModified)}`
+    : t("last_modified_never");
   return `
     <div class="card">
       <h2 data-i18n="print_heading"></h2>
@@ -378,7 +523,8 @@ function renderOverviewTab() {
         <label style="flex:1"><span data-i18n="end_date"></span><br/>
           <input type="date" id="printEnd" value="${last}"/></label>
       </div>
-      <div class="row" style="margin-top:10px; justify-content:flex-end">
+      <div class="row" style="margin-top:10px; justify-content:space-between; align-items:center">
+        <span class="last-modified">${escapeHtml(lastModText)}</span>
         <button id="openPrintBtn" class="primary" data-i18n="print_open"></button>
       </div>
     </div>
@@ -464,6 +610,16 @@ function wireTab() {
 
 function attr(s) {
   return String(s ?? "").replace(/"/g, "&quot;");
+}
+function formatDateTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  // Render in the admin's local timezone for readability.
+  return d.toLocaleString(getLang() === "en" ? "en-GB" : "fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 function escapeHtml(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) =>
