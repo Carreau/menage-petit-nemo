@@ -47,6 +47,11 @@ function updateHeader() {
   if (fam) {
     youAre.classList.remove("hidden");
     youAreName.textContent = fam.name;
+    const avatar = document.getElementById("youAreAvatar");
+    if (avatar) {
+      avatar.textContent = familyInitials(fam.name);
+      avatar.style.background = familyColor(fam.name);
+    }
     nav.classList.remove("hidden");
   } else {
     youAre.classList.add("hidden");
@@ -339,8 +344,11 @@ function renderNextCleaning(sat, showPhones) {
     const famRec = state.families.find((f) => f.id === a.familyId);
     const parents = renderParentLines(famRec?.parents || [], { showPhone: showPhones });
     return `<div class="next-slot">
-        <div class="next-family">${escapeHtml(a.familyName)}</div>
-        ${parents}
+        ${renderAvatar(a.familyName, "md")}
+        <div class="next-slot-text">
+          <div class="next-family">${escapeHtml(a.familyName)}</div>
+          ${parents}
+        </div>
       </div>`;
   };
   const a1 = sat.slots[0];
@@ -410,6 +418,7 @@ function renderSlot(sat, slot, { showPhones } = { showPhones: false }) {
     return `
       <div class="slot filled">
         <div class="slot-head">
+          ${renderAvatar(a.familyName, "sm")}
           <div class="slot-who">
             <span>${escapeHtml(a.familyName)}</span>
             ${parentsHtml}
@@ -540,8 +549,11 @@ function openFamilyPicker({ allowCancel }) {
           .join(" · ");
         return `
           <button type="button" class="family-pick${isCurrent ? " current" : ""}" data-id="${f.id}">
-            <span class="family-pick-name">${escapeHtml(f.name)}</span>
-            ${parentNames ? `<span class="family-pick-parents">${parentNames}</span>` : ""}
+            ${renderAvatar(f.name, "lg")}
+            <span class="family-pick-text">
+              <span class="family-pick-name">${escapeHtml(f.name)}</span>
+              ${parentNames ? `<span class="family-pick-parents">${parentNames}</span>` : ""}
+            </span>
           </button>`;
       })
       .join("");
@@ -644,6 +656,42 @@ function errorMessage(code) {
     case "not_your_slot":         return t("err_not_your_slot");
     default:                      return t("err_generic");
   }
+}
+
+// ---- Auto-generated avatars ----
+//
+// A small colored circle with the family's initials. Color and initials
+// are deterministic so the same family always renders the same avatar.
+
+function familyInitials(name) {
+  const parts = String(name || "").split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  // Drop the leading "Famille" / "Family" prefix if present so "Famille
+  // Dupont" → "DU" instead of "FA".
+  const meaningful = parts.filter((p) => !/^(famille|family)$/i.test(p));
+  const useParts = meaningful.length ? meaningful : parts;
+  if (useParts.length === 1) {
+    const w = useParts[0].replace(/[^\p{L}]/gu, "");
+    return (w.slice(0, 2) || "?").toUpperCase();
+  }
+  return useParts.slice(0, 2).map((p) => p[0] || "").join("").toUpperCase();
+}
+
+function familyColor(name) {
+  let hash = 0;
+  const s = String(name || "");
+  for (let i = 0; i < s.length; i++) {
+    hash = (hash << 5) - hash + s.charCodeAt(i);
+    hash |= 0;
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue} 55% 45%)`;
+}
+
+function renderAvatar(name, size = "sm") {
+  const initials = familyInitials(name);
+  const color = familyColor(name);
+  return `<span class="avatar avatar-${size}" style="background:${color}" aria-hidden="true">${escapeHtml(initials)}</span>`;
 }
 
 function renderParentLines(parents, { showPhone }) {

@@ -74,6 +74,7 @@ function render() {
           const parents = renderParentLines(f.parents || []);
           return `
             <div class="family ${cls}">
+              ${renderAvatar(f.name, "md")}
               <div class="family-main">
                 <span class="name">${escapeHtml(f.name)}</span>
                 ${parents}
@@ -115,6 +116,33 @@ function renderParentLines(parents) {
     .filter((p) => p && p.name)
     .map((p) => `<div class="family-parent">${escapeHtml(p.name)}</div>`)
     .join("");
+}
+
+// Same auto-avatar helpers as on the schedule page (intentionally
+// duplicated to keep the static pages framework-free).
+function familyInitials(name) {
+  const parts = String(name || "").split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  const meaningful = parts.filter((p) => !/^(famille|family)$/i.test(p));
+  const useParts = meaningful.length ? meaningful : parts;
+  if (useParts.length === 1) {
+    const w = useParts[0].replace(/[^\p{L}]/gu, "");
+    return (w.slice(0, 2) || "?").toUpperCase();
+  }
+  return useParts.slice(0, 2).map((p) => p[0] || "").join("").toUpperCase();
+}
+function familyColor(name) {
+  let hash = 0;
+  const s = String(name || "");
+  for (let i = 0; i < s.length; i++) {
+    hash = (hash << 5) - hash + s.charCodeAt(i);
+    hash |= 0;
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue} 55% 45%)`;
+}
+function renderAvatar(name, size = "md") {
+  return `<span class="avatar avatar-${size}" style="background:${familyColor(name)}" aria-hidden="true">${escapeHtml(familyInitials(name))}</span>`;
 }
 
 function escapeHtml(s) {
