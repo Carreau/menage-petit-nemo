@@ -425,6 +425,9 @@ function renderDangerTab() {
         <button class="danger" id="resetBtn" data-i18n="danger_reset"></button>
         <button class="danger" id="clearSatBtn" data-i18n="danger_clear_saturdays"></button>
       </div>
+      <h3 style="margin-top:18px" data-i18n="local_data_heading"></h3>
+      <p style="color:var(--muted); margin:0 0 10px" data-i18n="local_data_help"></p>
+      <button id="clearLocalBtn" data-i18n="clear_local"></button>
     </div>
   `;
 }
@@ -441,6 +444,14 @@ function wireDangerTab() {
     const res = await api("/api/admin/clear-saturdays", { method: "POST" });
     if (!res.ok) return alert(t("err_generic"));
     await loadState();
+  });
+  document.getElementById("clearLocalBtn").addEventListener("click", () => {
+    if (!confirm(t("clear_local_confirm"))) return;
+    try {
+      localStorage.removeItem("mnp_lang");
+      localStorage.removeItem("mnp_current_family");
+    } catch (_) {}
+    alert(t("clear_local_done"));
   });
 }
 
