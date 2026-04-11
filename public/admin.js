@@ -7,7 +7,7 @@ const langToggle = document.getElementById("langToggle");
 const logoutBtn = document.getElementById("logoutBtn");
 
 let state = null;
-let tab = "families";
+let tab = "overview";
 // Id of the family currently in edit mode (null when nothing is being
 // edited). Only one family at a time so the admin can't open multiple
 // forms and forget which one to save.
