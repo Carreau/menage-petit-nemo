@@ -38,6 +38,8 @@ export const STRINGS = {
     past_label: "Passé",
     empty_slot: "Place libre",
     add_to_calendar: "Ajouter au calendrier",
+    ics_btn_cleaning: "Rappel ménage",
+    ics_btn_keys: "Rappel clés",
     add_to_calendar_title: "Ajouter au calendrier",
     add_to_calendar_help:
       "Télécharge un fichier .ics avec le samedi de ménage et un rappel la veille pour récupérer les clés.",
@@ -185,6 +187,8 @@ export const STRINGS = {
     past_label: "Past",
     empty_slot: "Free spot",
     add_to_calendar: "Add to calendar",
+    ics_btn_cleaning: "Cleaning reminder",
+    ics_btn_keys: "Keys reminder",
     add_to_calendar_title: "Add to calendar",
     add_to_calendar_help:
       "Downloads an .ics file with the cleaning Saturday and a reminder the day before to pick up the keys.",

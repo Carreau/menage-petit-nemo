@@ -277,8 +277,13 @@ main {
   text-decoration: none;
 }
 .saturday .slot.filled .slot-phone:hover { color: var(--accent); }
+.saturday .slot.filled .ics-btns {
+  display: flex;
+  gap: 6px;
+}
 .saturday .slot.filled .ics-btn {
   display: block;
+  flex: 1 1 0;
   font: inherit;
   cursor: pointer;
   border: 1px solid var(--line);
@@ -289,6 +294,7 @@ main {
   text-align: center;
   font-size: 13px;
   text-decoration: none;
+  white-space: nowrap;
 }
 .saturday .slot.filled .ics-btn:hover {
   border-color: var(--accent);

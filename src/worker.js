@@ -24,7 +24,7 @@ import {
   resetAssignments,
   clearAllSaturdays,
 } from "./db.js";
-import { buildIcs, isIsoDate } from "./ics.js";
+import { buildIcs, isIsoDate, isValidKind } from "./ics.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -107,17 +107,21 @@ async function handleApi(request, env, url) {
   // text/calendar so mobile browsers hand it off to the OS calendar
   // handler (iOS Calendar, Google Calendar, etc.) instead of dumping
   // a blob into Downloads like the old client-side generator did.
+  // ?kind=cleaning returns the Saturday 09:00–12:00 cleaning event.
+  // ?kind=keys     returns the Friday 16:00–18:00 key pickup event.
   if (pathname === "/api/ics" && method === "GET") {
     if (!(await hasFamilyAccess(request, env))) return json({ error: "unauthorized" }, 401);
     const date = url.searchParams.get("date");
     if (!isIsoDate(date)) return json({ error: "bad_date" }, 400);
+    const kind = url.searchParams.get("kind") || "cleaning";
+    if (!isValidKind(kind)) return json({ error: "bad_kind" }, 400);
     const lang = url.searchParams.get("lang") === "en" ? "en" : "fr";
-    const body = buildIcs(date, lang);
+    const body = buildIcs(date, kind, lang);
     return new Response(body, {
       status: 200,
       headers: {
         "content-type": "text/calendar; charset=utf-8",
-        "content-disposition": `inline; filename="menage-petit-nemo-${date}.ics"`,
+        "content-disposition": `inline; filename="menage-petit-nemo-${date}-${kind}.ics"`,
         "cache-control": "no-store",
       },
     });

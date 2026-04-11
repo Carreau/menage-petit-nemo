@@ -350,7 +350,10 @@ function renderSlot(sat, slot, { showPhones } = { showPhones: false }) {
            data-release='${JSON.stringify({ id: a.assignmentId, name: a.familyName, familyId: a.familyId })}'>×</button>`
       : "";
     const icsBtn = canIcs
-      ? `<a class="ics-btn" href="/api/ics?date=${encodeURIComponent(sat.date)}&lang=${getLang()}">📅 ${t("add_to_calendar")}</a>`
+      ? `<div class="ics-btns">
+          <a class="ics-btn" href="/api/ics?kind=cleaning&date=${encodeURIComponent(sat.date)}&lang=${getLang()}">🧽 ${t("ics_btn_cleaning")}</a>
+          <a class="ics-btn" href="/api/ics?kind=keys&date=${encodeURIComponent(sat.date)}&lang=${getLang()}">🔑 ${t("ics_btn_keys")}</a>
+        </div>`
       : "";
     const famRec = state.families.find((f) => f.id === a.familyId);
     const parentsHtml = renderParentLines(famRec?.parents || [], { showPhone: showPhones });

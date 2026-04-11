@@ -1,8 +1,11 @@
 // Shared VCALENDAR generator. Used by the /api/ics route in worker.js.
 //
-// Produces a tiny VCALENDAR with two events:
-//   - Cleaning day (the Saturday itself, 09:00–12:00 floating local time)
-//   - Key pickup reminder on the Friday before (16:00–18:00 floating local)
+// Produces a small VCALENDAR containing a single event, one of:
+//   - cleaning: the Saturday itself, 09:00–12:00 floating local time
+//   - keys:     the Friday before, 16:00–18:00 floating local time
+//
+// We generate one event per file so parents can pick which reminder(s)
+// they want to add to their calendar — two separate taps from the UI.
 //
 // "Floating" local time means no TZID and no trailing Z, so the calendar
 // app renders the events in the viewer's local timezone. This is the
@@ -20,17 +23,26 @@ const SUMMARIES = {
   },
 };
 
-export function buildIcs(satIso, lang = "fr") {
+export function buildIcs(satIso, kind, lang = "fr") {
   const s = SUMMARIES[lang === "en" ? "en" : "fr"];
   const satCompact = satIso.replace(/-/g, "");
   const friCompact = addDays(satIso, -1).replace(/-/g, "");
   const dtstamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
   const uidBase = `menage-petit-nemo-${satCompact}`;
 
-  const cleaningStart = `${satCompact}T090000`;
-  const cleaningEnd   = `${satCompact}T120000`;
-  const keysStart     = `${friCompact}T160000`;
-  const keysEnd       = `${friCompact}T180000`;
+  let uid, dtstart, dtend, summary;
+  if (kind === "keys") {
+    uid = `${uidBase}-keys@menage-petit-nemo`;
+    dtstart = `${friCompact}T160000`;
+    dtend = `${friCompact}T180000`;
+    summary = s.keys;
+  } else {
+    // default kind = "cleaning"
+    uid = `${uidBase}-cleaning@menage-petit-nemo`;
+    dtstart = `${satCompact}T090000`;
+    dtend = `${satCompact}T120000`;
+    summary = s.cleaning;
+  }
 
   const lines = [
     "BEGIN:VCALENDAR",
@@ -39,23 +51,20 @@ export function buildIcs(satIso, lang = "fr") {
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
-    `UID:${uidBase}-cleaning@menage-petit-nemo`,
+    `UID:${uid}`,
     `DTSTAMP:${dtstamp}`,
-    `DTSTART:${cleaningStart}`,
-    `DTEND:${cleaningEnd}`,
-    `SUMMARY:${icsEscape(s.cleaning)}`,
-    "END:VEVENT",
-    "BEGIN:VEVENT",
-    `UID:${uidBase}-keys@menage-petit-nemo`,
-    `DTSTAMP:${dtstamp}`,
-    `DTSTART:${keysStart}`,
-    `DTEND:${keysEnd}`,
-    `SUMMARY:${icsEscape(s.keys)}`,
+    `DTSTART:${dtstart}`,
+    `DTEND:${dtend}`,
+    `SUMMARY:${icsEscape(summary)}`,
     "END:VEVENT",
     "END:VCALENDAR",
   ];
   // RFC 5545 mandates CRLF line endings.
   return lines.join("\r\n") + "\r\n";
+}
+
+export function isValidKind(k) {
+  return k === "cleaning" || k === "keys";
 }
 
 export function isIsoDate(s) {
