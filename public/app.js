@@ -351,8 +351,8 @@ function renderSlot(sat, slot, { showPhones } = { showPhones: false }) {
       : "";
     const icsBtn = canIcs
       ? `<div class="ics-btns">
-          <a class="ics-btn" href="/api/ics?kind=cleaning&date=${encodeURIComponent(sat.date)}&lang=${getLang()}">🧽 ${t("ics_btn_cleaning")}</a>
-          <a class="ics-btn" href="/api/ics?kind=keys&date=${encodeURIComponent(sat.date)}&lang=${getLang()}">🔑 ${t("ics_btn_keys")}</a>
+          <a class="ics-btn" href="/api/ics?kind=cleaning&date=${encodeURIComponent(sat.date)}&lang=${getLang()}">📅 ${t("ics_btn_cleaning")}</a>
+          <a class="ics-btn" href="/api/ics?kind=keys&date=${encodeURIComponent(sat.date)}&lang=${getLang()}">📅 ${t("ics_btn_keys")}</a>
         </div>`
       : "";
     const famRec = state.families.find((f) => f.id === a.familyId);

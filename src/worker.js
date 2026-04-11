@@ -109,8 +109,13 @@ async function handleApi(request, env, url) {
   // a blob into Downloads like the old client-side generator did.
   // ?kind=cleaning returns the Saturday 09:00–12:00 cleaning event.
   // ?kind=keys     returns the Friday 16:00–18:00 key pickup event.
+  //
+  // Deliberately *public*: when you tap the link on a phone, the OS
+  // calendar app refetches the URL without the browser's cookies, so
+  // an authenticated endpoint would 401 and the event would never be
+  // added. The .ics body contains only a generic reminder for a
+  // publicly-known Saturday — no PII — so there's nothing to protect.
   if (pathname === "/api/ics" && method === "GET") {
-    if (!(await hasFamilyAccess(request, env))) return json({ error: "unauthorized" }, 401);
     const date = url.searchParams.get("date");
     if (!isIsoDate(date)) return json({ error: "bad_date" }, 400);
     const kind = url.searchParams.get("kind") || "cleaning";
