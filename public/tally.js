@@ -106,17 +106,14 @@ function render() {
   applyI18n();
 }
 
+// Tally is a general counting view; for privacy we intentionally do
+// NOT surface phone numbers here (they only show on the schedule for
+// saturdays you are actually on). Parent names still appear so you know
+// who's in each family.
 function renderParentLines(parents) {
   return (parents || [])
-    .filter((p) => p && (p.name || p.phone))
-    .map((p) => {
-      const name = p.name ? escapeHtml(p.name) : "";
-      const phone = p.phone
-        ? `<a class="phone" href="tel:${encodeURIComponent(p.phone)}">${escapeHtml(p.phone)}</a>`
-        : "";
-      const sep = name && phone ? " · " : "";
-      return `<div class="family-parent">${name}${sep}${phone}</div>`;
-    })
+    .filter((p) => p && p.name)
+    .map((p) => `<div class="family-parent">${escapeHtml(p.name)}</div>`)
     .join("");
 }
 

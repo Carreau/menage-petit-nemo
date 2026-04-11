@@ -87,17 +87,14 @@ function render() {
             }</td>
           </tr>`;
       }
+      // Privacy: the printed sheet is meant to be posted at the daycare,
+      // so we keep family and parent names but deliberately omit phones.
       const slot = (a) => {
         if (!a) return `<span class="empty">—</span>`;
         const famRec = state.families.find((f) => f.id === a.familyId);
         const parents = (famRec?.parents || [])
-          .filter((p) => p && (p.name || p.phone))
-          .map((p) => {
-            const parts = [];
-            if (p.name) parts.push(escapeHtml(p.name));
-            if (p.phone) parts.push(escapeHtml(p.phone));
-            return `<div class="phone">${parts.join(" · ")}</div>`;
-          })
+          .filter((p) => p && p.name)
+          .map((p) => `<div class="phone">${escapeHtml(p.name)}</div>`)
           .join("");
         return `<strong>${escapeHtml(a.familyName)}</strong>${parents}`;
       };
