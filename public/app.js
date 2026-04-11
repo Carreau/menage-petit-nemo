@@ -175,6 +175,8 @@ function render() {
           .map((s) => s.id)
       : [],
   );
+  const nextSat = state.saturdays.find((s) => !s.past && !s.closed) || null;
+  const nextHtml = nextSat ? renderNextCleaning(nextSat, mySaturdayIds.has(nextSat.id)) : "";
   const banner =
     fam && fam.used >= fam.quota
       ? `<div class="badge" style="display:block;margin-bottom:10px;padding:8px 12px">${t(
@@ -196,6 +198,7 @@ function render() {
   });
 
   root.innerHTML = `
+    ${nextHtml}
     <section class="card">
       <div class="summary">
         <div><div class="num">${openCount}</div><div class="lbl">${t("summary_open", openCount)}</div></div>
@@ -328,6 +331,33 @@ function icsEscape(s) {
     .replace(/;/g, "\\;")
     .replace(/,/g, "\\,")
     .replace(/\n/g, "\\n");
+}
+
+function renderNextCleaning(sat, showPhones) {
+  const slotInfo = (a) => {
+    if (!a) return `<div class="next-slot empty">—</div>`;
+    const famRec = state.families.find((f) => f.id === a.familyId);
+    const parents = renderParentLines(famRec?.parents || [], { showPhone: showPhones });
+    return `<div class="next-slot">
+        <div class="next-family">${escapeHtml(a.familyName)}</div>
+        ${parents}
+      </div>`;
+  };
+  const a1 = sat.slots[0];
+  const a2 = sat.slots[1];
+  const noneSignedUp = !a1 && !a2;
+  const body = noneSignedUp
+    ? `<div class="next-cleaning-empty">${t("next_cleaning_nobody")}</div>`
+    : `<div class="next-cleaning-slots">${slotInfo(a1)}${slotInfo(a2)}</div>`;
+  return `
+    <section class="card next-cleaning">
+      <div class="next-cleaning-head">
+        <span class="next-cleaning-label" data-i18n="next_cleaning_label"></span>
+        <span class="next-cleaning-date">${formatDate(sat.date)}</span>
+      </div>
+      ${body}
+    </section>
+  `;
 }
 
 function renderSaturday(s, { showPhones }) {

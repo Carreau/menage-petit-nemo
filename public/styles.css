@@ -124,6 +124,55 @@ main {
 .summary .num { font-size: 26px; font-weight: 600; }
 .summary .lbl { color: var(--muted); font-size: 13px; }
 
+.next-cleaning {
+  border-color: #c9dbfa;
+  background: #eef4ff;
+}
+.next-cleaning-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.next-cleaning-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.next-cleaning-date {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.next-cleaning-slots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+.next-cleaning-empty {
+  color: var(--muted);
+  margin-top: 8px;
+  font-style: italic;
+}
+.next-slot {
+  background: #fff;
+  border: 1px solid #c9dbfa;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.next-slot.empty { color: var(--muted); font-style: italic; }
+.next-slot .next-family { font-weight: 600; }
+.next-slot .slot-parent { font-size: 12px; color: var(--muted); }
+.next-slot .slot-phone { color: var(--muted); text-decoration: none; }
+.next-slot .slot-phone:hover { color: var(--accent); }
+
+@media (max-width: 480px) {
+  .next-cleaning-slots { grid-template-columns: 1fr; }
+}
+
 .families {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -361,7 +410,8 @@ th { color: var(--muted); font-weight: 500; font-size: 13px; }
 .print-header h2 { margin: 0 0 4px; font-size: 22px; }
 .print-header .print-sub { color: var(--muted); }
 .print-header .print-range { margin-top: 6px; font-weight: 600; }
-.print-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.print-table { width: 100%; border-collapse: collapse; font-size: 14px; table-layout: fixed; }
+.print-table col.col-date { width: 30%; }
 .print-table th,
 .print-table td {
   border: 1px solid var(--line);
@@ -370,10 +420,17 @@ th { color: var(--muted); font-weight: 500; font-size: 13px; }
   text-align: left;
 }
 .print-table th { background: #f2f5fa; font-weight: 600; color: var(--ink); }
+/* Baseline row height: tall enough to write a name + phone with a pen. */
+.print-table tbody td { height: 1.5cm; }
+/* Rows where at least one slot is empty get extra writing space. */
+.print-table tr.has-empty td { height: 2cm; }
+/* Closed rows are informational only — keep them compact. */
+.print-table tr.closed-row td { height: auto; background: #fbf6f5; color: var(--muted); }
 .print-table td .note { color: var(--muted); font-size: 12px; margin-top: 2px; }
 .print-table td .phone { color: var(--muted); font-size: 12px; }
-.print-table td .empty { color: var(--muted); }
-.print-table tr.closed-row td { background: #fbf6f5; color: var(--muted); }
+.print-table td.slot-empty { background: #fafcff; }
+/* Don't split a row across two pages when printing. */
+.print-table tr { page-break-inside: avoid; break-inside: avoid; }
 .print-footer {
   margin-top: 14px;
   color: var(--muted);

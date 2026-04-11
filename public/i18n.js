@@ -17,6 +17,8 @@ export const STRINGS = {
     schedule_link: "Planning",
     you_are: "Vous :",
     change_family: "Changer",
+    next_cleaning_label: "Prochain ménage",
+    next_cleaning_nobody: "Aucune famille inscrite pour l'instant.",
     select_family_title: "Qui êtes-vous ?",
     select_family_help:
       "Choisissez votre famille. Ce choix est mémorisé sur cet appareil.",
@@ -140,6 +142,8 @@ export const STRINGS = {
     schedule_link: "Schedule",
     you_are: "You:",
     change_family: "Change",
+    next_cleaning_label: "Next cleaning",
+    next_cleaning_nobody: "No family signed up yet.",
     select_family_title: "Who are you?",
     select_family_help:
       "Pick your family. This choice is remembered on this device.",
