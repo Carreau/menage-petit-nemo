@@ -65,6 +65,10 @@ export const STRINGS = {
       "Vous ne pouvez libérer que les créneaux de votre famille.",
     err_generic: "Une erreur est survenue.",
     no_families: "Aucune famille. L'admin doit en ajouter.",
+    empty_no_families_title: "Aucune famille pour l'instant",
+    empty_no_families_help:
+      "Connectez-vous à l'administration pour ajouter les familles, puis générer le planning des samedis.",
+    go_to_admin: "Aller à l'administration",
     no_saturdays: "Aucun samedi. L'admin doit générer le planning.",
     day_names: ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."],
     month_names: [
@@ -90,6 +94,8 @@ export const STRINGS = {
     save_all: "Tout enregistrer",
     saving: "Enregistrement…",
     edit: "Modifier",
+    save_other_first: (name) =>
+      `Veuillez d'abord enregistrer ou annuler les modifications de « ${name} ».`,
     inactive: "Inactive",
     last_modified: "Dernière modification",
     last_modified_never: "Jamais modifié",
@@ -202,6 +208,10 @@ export const STRINGS = {
       "You can only release your own family's slots.",
     err_generic: "Something went wrong.",
     no_families: "No families yet. The admin must add some.",
+    empty_no_families_title: "No families yet",
+    empty_no_families_help:
+      "Sign in to the admin panel to add the families, then generate the Saturdays schedule.",
+    go_to_admin: "Go to admin panel",
     no_saturdays: "No Saturdays yet. The admin must generate the schedule.",
     day_names: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     month_names: [
@@ -226,6 +236,8 @@ export const STRINGS = {
     save_all: "Save all",
     saving: "Saving…",
     edit: "Edit",
+    save_other_first: (name) =>
+      `Please save or cancel the changes to "${name}" first.`,
     inactive: "Inactive",
     last_modified: "Last modified",
     last_modified_never: "Never modified",
