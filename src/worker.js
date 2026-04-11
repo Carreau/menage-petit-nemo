@@ -23,6 +23,7 @@ import {
   deleteSaturday,
   resetAssignments,
   clearAllSaturdays,
+  getAuditLog,
 } from "./db.js";
 import { buildIcs, isIsoDate, isValidKind } from "./ics.js";
 
@@ -221,6 +222,12 @@ async function handleApi(request, env, url) {
     if (pathname === "/api/admin/reset" && method === "POST") {
       const res = await resetAssignments(env.DB);
       return json(res);
+    }
+
+    if (pathname === "/api/admin/audit" && method === "GET") {
+      const limit = Number(url.searchParams.get("limit") || 200);
+      const entries = await getAuditLog(env.DB, limit);
+      return json({ entries });
     }
 
     if (pathname === "/api/admin/clear-saturdays" && method === "POST") {

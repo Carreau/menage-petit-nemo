@@ -17,6 +17,64 @@ async function bumpLastModified(db) {
     .run();
 }
 
+// Append an audit_log row. Never throws — a logging failure must not
+// roll back the mutation that just succeeded.
+async function logEvent(db, entry) {
+  try {
+    await db
+      .prepare(
+        `INSERT INTO audit_log
+           (action, actor, family_id, family_name, saturday_date, slot, details)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        entry.action,
+        entry.actor || null,
+        entry.familyId ?? null,
+        entry.familyName || null,
+        entry.saturdayDate || null,
+        entry.slot ?? null,
+        entry.details ? JSON.stringify(entry.details) : null,
+      )
+      .run();
+  } catch (err) {
+    console.error("audit log failed", err?.message || err);
+  }
+}
+
+export async function getAuditLog(db, limit = 200) {
+  const n = Math.min(Math.max(Number(limit) || 200, 1), 1000);
+  const res = await db
+    .prepare(
+      `SELECT id, at, action, actor, family_id, family_name,
+              saturday_date, slot, details
+         FROM audit_log
+        ORDER BY id DESC
+        LIMIT ?`,
+    )
+    .bind(n)
+    .all();
+  return (res.results || []).map((r) => ({
+    id: r.id,
+    at: r.at,
+    action: r.action,
+    actor: r.actor || null,
+    familyId: r.family_id || null,
+    familyName: r.family_name || null,
+    saturdayDate: r.saturday_date || null,
+    slot: r.slot || null,
+    details: r.details ? safeParse(r.details) : null,
+  }));
+}
+
+function safeParse(s) {
+  try {
+    return JSON.parse(s);
+  } catch {
+    return s;
+  }
+}
+
 export async function getState(db) {
   const [familiesRes, saturdaysRes, assignmentsRes, lastModRes] = await Promise.all([
     db.prepare(`
@@ -88,7 +146,7 @@ export async function claimSlot(db, { saturdayId, slot, familyId }, { isAdmin = 
   if (!isAdmin && sat.date < todayIsoUtc()) return { error: "saturday_past" };
 
   const fam = await db
-    .prepare("SELECT id, quota, active FROM families WHERE id = ?")
+    .prepare("SELECT id, name, quota, active FROM families WHERE id = ?")
     .bind(familyId)
     .first();
   if (!fam) return { error: "no_such_family" };
@@ -112,6 +170,14 @@ export async function claimSlot(db, { saturdayId, slot, familyId }, { isAdmin = 
       .bind(saturdayId, familyId, slot)
       .run();
     await bumpLastModified(db);
+    await logEvent(db, {
+      action: "claim",
+      actor: isAdmin ? "admin" : "family",
+      familyId: fam.id,
+      familyName: fam.name ?? null,
+      saturdayDate: sat.date,
+      slot,
+    });
     return { ok: true, id: res.meta?.last_row_id };
   } catch (err) {
     const msg = String(err && err.message || err);
@@ -132,9 +198,10 @@ export async function claimSlot(db, { saturdayId, slot, familyId }, { isAdmin = 
 export async function releaseSlot(db, assignmentId, { familyId, isAdmin = false } = {}) {
   const row = await db
     .prepare(
-      `SELECT a.id, a.family_id, s.date
+      `SELECT a.id, a.family_id, a.slot, s.date, f.name AS family_name
          FROM assignments a
          JOIN saturdays s ON s.id = a.saturday_id
+         JOIN families  f ON f.id = a.family_id
         WHERE a.id = ?`,
     )
     .bind(assignmentId)
@@ -144,6 +211,14 @@ export async function releaseSlot(db, assignmentId, { familyId, isAdmin = false 
   if (!isAdmin && Number(familyId) !== row.family_id) return { error: "not_your_slot" };
   await db.prepare("DELETE FROM assignments WHERE id = ?").bind(assignmentId).run();
   await bumpLastModified(db);
+  await logEvent(db, {
+    action: "release",
+    actor: isAdmin ? "admin" : "family",
+    familyId: row.family_id,
+    familyName: row.family_name,
+    saturdayDate: row.date,
+    slot: row.slot,
+  });
   return { ok: true };
 }
 
@@ -176,6 +251,12 @@ export async function createFamily(db, { name, quota, parents }) {
     )
     .run();
   await bumpLastModified(db);
+  await logEvent(db, {
+    action: "family_create",
+    actor: "admin",
+    familyId: res.meta?.last_row_id,
+    familyName: n,
+  });
   return { ok: true, id: res.meta?.last_row_id };
 }
 
@@ -195,6 +276,11 @@ export async function bulkCreateFamilies(db, families) {
   // createFamily already bumps, but bump once more to be sure if all
   // entries were skipped (no-op).
   await bumpLastModified(db);
+  await logEvent(db, {
+    action: "families_import",
+    actor: "admin",
+    details: { count, submitted: families.length },
+  });
   return { ok: true, count };
 }
 
@@ -228,19 +314,47 @@ export async function updateFamily(db, id, { name, quota, active, parents }) {
     binds.push(trimOrNull(p2.phone));
   }
   if (!sets.length) return { ok: true };
+  const existing = await db
+    .prepare("SELECT name FROM families WHERE id = ?")
+    .bind(id)
+    .first();
   binds.push(id);
   await db.prepare(`UPDATE families SET ${sets.join(", ")} WHERE id = ?`).bind(...binds).run();
   await bumpLastModified(db);
+  await logEvent(db, {
+    action: "family_update",
+    actor: "admin",
+    familyId: id,
+    familyName:
+      name !== undefined ? String(name).trim() : existing?.name || null,
+    details: {
+      changed: Object.fromEntries(
+        Object.entries({ name, quota, active, parents }).filter(
+          ([, v]) => v !== undefined,
+        ),
+      ),
+    },
+  });
   return { ok: true };
 }
 
 export async function deleteFamily(db, id) {
+  const existing = await db
+    .prepare("SELECT name FROM families WHERE id = ?")
+    .bind(id)
+    .first();
   // D1 doesn't reliably enforce foreign-key cascades; clean up explicitly.
   await db.batch([
     db.prepare("DELETE FROM assignments WHERE family_id = ?").bind(id),
     db.prepare("DELETE FROM families WHERE id = ?").bind(id),
   ]);
   await bumpLastModified(db);
+  await logEvent(db, {
+    action: "family_delete",
+    actor: "admin",
+    familyId: id,
+    familyName: existing?.name || null,
+  });
   return { ok: true };
 }
 
@@ -270,6 +384,11 @@ export async function createSaturdaysInRange(db, { startDate, endDate, skipDates
   }
   if (stmts.length) await db.batch(stmts);
   await bumpLastModified(db);
+  await logEvent(db, {
+    action: "saturday_generate",
+    actor: "admin",
+    details: { startDate, endDate, count: stmts.length, skipDates: [...skip] },
+  });
   return { ok: true, count: stmts.length };
 }
 
@@ -285,24 +404,46 @@ export async function updateSaturday(db, id, { note, closed }) {
     binds.push(closed ? 1 : 0);
   }
   if (!sets.length) return { ok: true };
+  const existing = await db
+    .prepare("SELECT date FROM saturdays WHERE id = ?")
+    .bind(id)
+    .first();
   binds.push(id);
   await db.prepare(`UPDATE saturdays SET ${sets.join(", ")} WHERE id = ?`).bind(...binds).run();
   await bumpLastModified(db);
+  await logEvent(db, {
+    action: "saturday_update",
+    actor: "admin",
+    saturdayDate: existing?.date || null,
+    details: Object.fromEntries(
+      Object.entries({ note, closed }).filter(([, v]) => v !== undefined),
+    ),
+  });
   return { ok: true };
 }
 
 export async function deleteSaturday(db, id) {
+  const existing = await db
+    .prepare("SELECT date FROM saturdays WHERE id = ?")
+    .bind(id)
+    .first();
   await db.batch([
     db.prepare("DELETE FROM assignments WHERE saturday_id = ?").bind(id),
     db.prepare("DELETE FROM saturdays WHERE id = ?").bind(id),
   ]);
   await bumpLastModified(db);
+  await logEvent(db, {
+    action: "saturday_delete",
+    actor: "admin",
+    saturdayDate: existing?.date || null,
+  });
   return { ok: true };
 }
 
 export async function resetAssignments(db) {
   await db.prepare("DELETE FROM assignments").run();
   await bumpLastModified(db);
+  await logEvent(db, { action: "reset_assignments", actor: "admin" });
   return { ok: true };
 }
 
@@ -313,6 +454,7 @@ export async function clearAllSaturdays(db) {
     db.prepare("DELETE FROM saturdays"),
   ]);
   await bumpLastModified(db);
+  await logEvent(db, { action: "clear_saturdays", actor: "admin" });
   return { ok: true };
 }
 

@@ -104,9 +104,10 @@ function renderLogin() {
 function render() {
   root.innerHTML = `
     <div class="tabs">
+      <button data-tab="overview"  ${tab === "overview"  ? 'class="active"' : ""} data-i18n="tab_overview"></button>
       <button data-tab="families"  ${tab === "families"  ? 'class="active"' : ""} data-i18n="tab_families"></button>
       <button data-tab="saturdays" ${tab === "saturdays" ? 'class="active"' : ""} data-i18n="tab_saturdays"></button>
-      <button data-tab="overview"  ${tab === "overview"  ? 'class="active"' : ""} data-i18n="tab_overview"></button>
+      <button data-tab="logs"      ${tab === "logs"      ? 'class="active"' : ""} data-i18n="tab_logs"></button>
       <button data-tab="danger"    ${tab === "danger"    ? 'class="active"' : ""} data-i18n="tab_danger"></button>
     </div>
     <div id="tabContent"></div>
@@ -121,6 +122,7 @@ function render() {
   if (tab === "families")  content.innerHTML = renderFamiliesTab();
   if (tab === "saturdays") content.innerHTML = renderSaturdaysTab();
   if (tab === "overview")  content.innerHTML = renderOverviewTab();
+  if (tab === "logs")      content.innerHTML = renderLogsTab();
   if (tab === "danger")    content.innerHTML = renderDangerTab();
   applyI18n();
   wireTab();
@@ -639,7 +641,84 @@ function wireTab() {
   if (tab === "families")  wireFamiliesTab();
   if (tab === "saturdays") wireSaturdaysTab();
   if (tab === "overview")  wireOverviewTab();
+  if (tab === "logs")      wireLogsTab();
   if (tab === "danger")    wireDangerTab();
+}
+
+// ---- Logs tab ----
+
+function renderLogsTab() {
+  return `
+    <div class="card">
+      <h2 data-i18n="tab_logs"></h2>
+      <p style="color:var(--muted)" data-i18n="logs_help"></p>
+      <div id="logsBody" class="logs-body">
+        <p style="color:var(--muted)">…</p>
+      </div>
+    </div>
+  `;
+}
+
+async function wireLogsTab() {
+  const body = document.getElementById("logsBody");
+  const res = await api("/api/admin/audit?limit=500");
+  if (!res.ok) {
+    body.innerHTML = `<p class="error">${t("err_generic")}</p>`;
+    return;
+  }
+  const entries = res.data.entries || [];
+  if (!entries.length) {
+    body.innerHTML = `<p style="color:var(--muted)">${t("logs_empty")}</p>`;
+    return;
+  }
+  const rows = entries.map(renderLogRow).join("");
+  body.innerHTML = `
+    <table class="logs-table">
+      <thead>
+        <tr>
+          <th data-i18n="logs_col_when"></th>
+          <th data-i18n="logs_col_actor"></th>
+          <th data-i18n="logs_col_action"></th>
+          <th data-i18n="logs_col_family"></th>
+          <th data-i18n="logs_col_saturday"></th>
+          <th data-i18n="logs_col_details"></th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+  applyI18n();
+}
+
+function renderLogRow(e) {
+  const when = formatDateTime(e.at);
+  const actorBadge = e.actor
+    ? `<span class="actor actor-${e.actor}">${escapeHtml(t(`logs_actor_${e.actor}`))}</span>`
+    : "";
+  const actionLabel = t(`logs_action_${e.action}`) || e.action;
+  const family = e.familyName
+    ? escapeHtml(e.familyName)
+    : e.familyId
+    ? `#${e.familyId}`
+    : "—";
+  const sat = e.saturdayDate
+    ? `${formatDate(e.saturdayDate)}${e.slot ? ` · ${t("logs_slot")} ${e.slot}` : ""}`
+    : "—";
+  const details = e.details
+    ? `<code class="logs-details">${escapeHtml(
+        typeof e.details === "string" ? e.details : JSON.stringify(e.details),
+      )}</code>`
+    : "";
+  return `
+    <tr>
+      <td class="nowrap">${escapeHtml(when)}</td>
+      <td>${actorBadge}</td>
+      <td>${escapeHtml(actionLabel)}</td>
+      <td>${family}</td>
+      <td>${sat}</td>
+      <td>${details}</td>
+    </tr>
+  `;
 }
 
 function attr(s) {

@@ -448,6 +448,41 @@ th { color: var(--muted); font-weight: 500; font-size: 13px; }
 .health-out.health-ok { border-color: #c5e6d4; background: #eef9f2; }
 .health-out.health-bad { border-color: #f0c3bf; background: #fbf0ee; }
 
+/* ---- Audit log table ---- */
+.logs-body { max-height: 65vh; overflow: auto; }
+.logs-table { width: 100%; font-size: 13px; }
+.logs-table th {
+  position: sticky;
+  top: 0;
+  background: #f2f5fa;
+  z-index: 1;
+}
+.logs-table td { vertical-align: top; }
+.logs-table td.nowrap { white-space: nowrap; }
+.actor {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.actor-family { background: #eef4ff; color: var(--accent); }
+.actor-admin  { background: #fbeae8; color: var(--red); }
+.logs-details {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--muted);
+  background: #f7f8fb;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
 /* Empty state shown on the main page when no families exist yet. */
 .empty-state {
   text-align: center;
