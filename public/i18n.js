@@ -22,6 +22,8 @@ export const STRINGS = {
     select_family_title: "Qui êtes-vous ?",
     select_family_help:
       "Choisissez votre famille. Ce choix est mémorisé sur cet appareil.",
+    search_placeholder: "Rechercher une famille…",
+    no_match: "Aucune famille ne correspond.",
     no_family_chosen: "Aucune famille choisie",
     summary_open: (n) => `${n} samedi${n > 1 ? "s" : ""} avec des places libres`,
     summary_remaining: (n) => `${n} place${n > 1 ? "s" : ""} restante${n > 1 ? "s" : ""}`,
@@ -147,6 +149,8 @@ export const STRINGS = {
     select_family_title: "Who are you?",
     select_family_help:
       "Pick your family. This choice is remembered on this device.",
+    search_placeholder: "Search a family…",
+    no_match: "No family matches.",
     no_family_chosen: "No family selected",
     summary_open: (n) => `${n} Saturday${n > 1 ? "s" : ""} with free spots`,
     summary_remaining: (n) => `${n} spot${n > 1 ? "s" : ""} remaining`,
