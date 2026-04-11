@@ -49,6 +49,9 @@ export const STRINGS = {
     claim_confirm_title: "Prendre ce créneau ?",
     claim_confirm_body: (fam, date) =>
       `Inscrire ${fam} pour le ménage du ${date} ?`,
+    who_participates: "Qui sera là ?",
+    err_no_parent_participating:
+      "Sélectionnez au moins un parent participant.",
     pick_family_title: "Choisir une famille",
     pick_family_help:
       "Sélectionnez la famille à affecter à ce créneau (correction admin).",
@@ -228,6 +231,9 @@ export const STRINGS = {
     claim_confirm_title: "Take this slot?",
     claim_confirm_body: (fam, date) =>
       `Sign ${fam} up for cleaning on ${date}?`,
+    who_participates: "Who's coming?",
+    err_no_parent_participating:
+      "Pick at least one participating parent.",
     pick_family_title: "Pick a family",
     pick_family_help:
       "Select the family to assign to this slot (admin correction).",

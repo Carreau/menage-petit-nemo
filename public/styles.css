@@ -272,6 +272,37 @@ main {
   color: var(--muted);
   line-height: 1.3;
 }
+.slot-parent.participating,
+.next-slot .slot-parent.participating {
+  font-weight: 700;
+  color: var(--ink);
+}
+/* Print view: participating parents bolded inside the slot cell. */
+.print-table td .phone.participating {
+  font-weight: 700;
+  color: var(--ink);
+}
+/* Claim modal: "who's coming" checkbox block. */
+.participate-block {
+  margin: 10px 0 2px;
+  padding: 10px 12px;
+  background: #f7f8fb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.participate-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.participate-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.participate-row input { width: auto; }
 .saturday .slot.filled .slot-phone {
   color: var(--muted);
   text-decoration: none;

@@ -86,7 +86,9 @@ export async function getState(db) {
     `).all(),
     db.prepare("SELECT id, date, note, closed FROM saturdays ORDER BY date").all(),
     db.prepare(`
-      SELECT a.id, a.saturday_id, a.family_id, a.slot, f.name AS family_name
+      SELECT a.id, a.saturday_id, a.family_id, a.slot,
+             a.parent1_participating, a.parent2_participating,
+             f.name AS family_name
         FROM assignments a
         JOIN families f ON f.id = a.family_id
     `).all(),
@@ -127,6 +129,7 @@ export async function getState(db) {
       assignmentId: a.id,
       familyId: a.family_id,
       familyName: a.family_name,
+      participating: [!!a.parent1_participating, !!a.parent2_participating],
     };
     const fam = famById.get(a.family_id);
     if (fam) fam.used += 1;
@@ -135,8 +138,23 @@ export async function getState(db) {
   return { families, saturdays, today, lastModified };
 }
 
-export async function claimSlot(db, { saturdayId, slot, familyId }, { isAdmin = false } = {}) {
+export async function claimSlot(db, { saturdayId, slot, familyId, participating }, { isAdmin = false } = {}) {
   if (![1, 2].includes(Number(slot))) return { error: "bad_slot" };
+
+  // Normalise the participating pair. Anything missing defaults to both
+  // parents participating (that's how admin correction claims and any
+  // legacy client without the checkboxes end up).
+  const p1 = Array.isArray(participating)
+    ? !!participating[0]
+    : participating && participating.parent1 !== undefined
+    ? !!participating.parent1
+    : true;
+  const p2 = Array.isArray(participating)
+    ? !!participating[1]
+    : participating && participating.parent2 !== undefined
+    ? !!participating.parent2
+    : true;
+  if (!p1 && !p2) return { error: "no_parent_participating" };
 
   const sat = await db
     .prepare("SELECT id, date, closed FROM saturdays WHERE id = ?")
@@ -169,9 +187,11 @@ export async function claimSlot(db, { saturdayId, slot, familyId }, { isAdmin = 
   try {
     const res = await db
       .prepare(
-        "INSERT INTO assignments (saturday_id, family_id, slot) VALUES (?, ?, ?)",
+        `INSERT INTO assignments
+           (saturday_id, family_id, slot, parent1_participating, parent2_participating)
+         VALUES (?, ?, ?, ?, ?)`,
       )
-      .bind(saturdayId, familyId, slot)
+      .bind(saturdayId, familyId, slot, p1 ? 1 : 0, p2 ? 1 : 0)
       .run();
     await bumpLastModified(db);
     await logEvent(db, {
@@ -181,6 +201,7 @@ export async function claimSlot(db, { saturdayId, slot, familyId }, { isAdmin = 
       familyName: fam.name ?? null,
       saturdayDate: sat.date,
       slot,
+      details: { participating: [p1, p2] },
     });
     return { ok: true, id: res.meta?.last_row_id };
   } catch (err) {

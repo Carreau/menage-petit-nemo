@@ -300,7 +300,10 @@ function renderNextCleaning(sat, showPhones) {
   const slotInfo = (a) => {
     if (!a) return `<div class="next-slot empty">—</div>`;
     const famRec = state.families.find((f) => f.id === a.familyId);
-    const parents = renderParentLines(famRec?.parents || [], { showPhone: showPhones });
+    const parents = renderParentLines(famRec?.parents || [], {
+      showPhone: showPhones,
+      participating: a.participating,
+    });
     return `<div class="next-slot">
         ${renderAvatar(a.familyName, "md")}
         <div class="next-slot-text">
@@ -374,7 +377,10 @@ function renderSlot(sat, slot, { showPhones } = { showPhones: false }) {
         </div>`
       : "";
     const famRec = state.families.find((f) => f.id === a.familyId);
-    const parentsHtml = renderParentLines(famRec?.parents || [], { showPhone: showPhones });
+    const parentsHtml = renderParentLines(famRec?.parents || [], {
+      showPhone: showPhones,
+      participating: a.participating,
+    });
     return `
       <div class="slot filled">
         <div class="slot-head">
@@ -563,12 +569,39 @@ function confirmClaim({ saturdayId, slot, date, past }) {
     alert(t("err_family_already_booked"));
     return;
   }
+  // Build the "who's coming" checkboxes — one per parent that has a
+  // name. Both default to checked. If neither parent has a name
+  // recorded, skip the picker and default to both participating.
+  const parents = fam.parents || [];
+  const picks = parents.map((p, i) => ({
+    index: i,
+    name: p?.name || "",
+    hasName: !!p?.name,
+  }));
+  const participatingHtml = picks
+    .filter((p) => p.hasName)
+    .map(
+      (p) => `
+        <label class="participate-row">
+          <input type="checkbox" class="p-check" data-idx="${p.index}" checked />
+          <span>${escapeHtml(p.name)}</span>
+        </label>`,
+    )
+    .join("");
   const backdrop = document.createElement("div");
   backdrop.className = "modal-backdrop";
   backdrop.innerHTML = `
     <div class="modal">
       <h3 data-i18n="claim_confirm_title"></h3>
       <p>${t("claim_confirm_body", fam.name, formatDate(date))}</p>
+      ${
+        participatingHtml
+          ? `<div class="participate-block">
+               <div class="participate-label" data-i18n="who_participates"></div>
+               ${participatingHtml}
+             </div>`
+          : ""
+      }
       <div class="error" id="modalErr"></div>
       <div class="actions">
         <button data-act="cancel" data-i18n="cancel"></button>
@@ -584,9 +617,24 @@ function confirmClaim({ saturdayId, slot, date, past }) {
   });
   backdrop.querySelector('[data-act="cancel"]').addEventListener("click", close);
   backdrop.querySelector('[data-act="ok"]').addEventListener("click", async () => {
+    // Collect the participating flags. If the modal had no checkboxes
+    // (no parent names recorded), default to both participating.
+    const participating = [true, true];
+    const checks = backdrop.querySelectorAll(".p-check");
+    if (checks.length) {
+      participating[0] = false;
+      participating[1] = false;
+      for (const el of checks) {
+        participating[Number(el.dataset.idx)] = el.checked;
+      }
+      if (!participating[0] && !participating[1]) {
+        backdrop.querySelector("#modalErr").textContent = t("err_no_parent_participating");
+        return;
+      }
+    }
     const res = await api("/api/claim", {
       method: "POST",
-      body: JSON.stringify({ saturdayId, slot, familyId: fam.id }),
+      body: JSON.stringify({ saturdayId, slot, familyId: fam.id, participating }),
     });
     if (res.ok) {
       close();
@@ -611,12 +659,13 @@ async function confirmRelease({ id, name, familyId }) {
 
 function errorMessage(code, data) {
   switch (code) {
-    case "slot_taken":            return t("err_slot_taken");
-    case "saturday_closed":       return t("err_saturday_closed");
-    case "saturday_past":         return t("err_saturday_past");
-    case "family_already_booked": return t("err_family_already_booked");
-    case "not_your_slot":         return t("err_not_your_slot");
-    case "wrong_local":           return t("err_wrong_local");
+    case "slot_taken":             return t("err_slot_taken");
+    case "saturday_closed":        return t("err_saturday_closed");
+    case "saturday_past":          return t("err_saturday_past");
+    case "family_already_booked":  return t("err_family_already_booked");
+    case "not_your_slot":          return t("err_not_your_slot");
+    case "wrong_local":            return t("err_wrong_local");
+    case "no_parent_participating":return t("err_no_parent_participating");
   }
   // Fall through: if the server sent an internal_error with a message,
   // include it as a technical suffix so the admin can file it upstream.
@@ -662,16 +711,26 @@ function renderAvatar(name, size = "sm") {
   return `<span class="avatar avatar-${size}" style="background:${color}" aria-hidden="true">${escapeHtml(initials)}</span>`;
 }
 
-function renderParentLines(parents, { showPhone }) {
+function renderParentLines(parents, { showPhone, participating } = {}) {
   return (parents || [])
-    .filter((p) => p && (p.name || (showPhone && p.phone)))
-    .map((p) => {
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => p && (p.name || (showPhone && p.phone)))
+    .map(({ p, i }) => {
       const name = p.name ? escapeHtml(p.name) : "";
       const phone = showPhone && p.phone
         ? `<a class="slot-phone" href="tel:${encodeURIComponent(p.phone)}">${escapeHtml(p.phone)}</a>`
         : "";
       const sep = name && phone ? " · " : "";
-      return `<div class="slot-parent">${name}${sep}${phone}</div>`;
+      // If the caller passed a participating pair, bold the ones that
+      // are coming. If it's undefined (tally page, admin view), all
+      // parents render with the default weight.
+      const isParticipating = participating ? !!participating[i] : false;
+      const cls = participating
+        ? isParticipating
+          ? "slot-parent participating"
+          : "slot-parent"
+        : "slot-parent";
+      return `<div class="${cls}">${name}${sep}${phone}</div>`;
     })
     .join("");
 }

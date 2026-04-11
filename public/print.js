@@ -81,16 +81,21 @@ function render() {
       // The printable sheet is compiled by admin for display at the
       // daycare, so it does carry phone numbers — the whole point is
       // that staff and parents have a contact sheet they can ring.
+      // Participating parents are bolded so it's obvious who will be
+      // physically cleaning from each family on the day.
       const slotCell = (a) => {
         if (!a) return `<td class="slot-empty"></td>`;
         const famRec = state.families.find((f) => f.id === a.familyId);
+        const participating = a.participating || [true, true];
         const parents = (famRec?.parents || [])
-          .filter((p) => p && (p.name || p.phone))
-          .map((p) => {
+          .map((p, i) => ({ p, i }))
+          .filter(({ p }) => p && (p.name || p.phone))
+          .map(({ p, i }) => {
             const parts = [];
             if (p.name) parts.push(escapeHtml(p.name));
             if (p.phone) parts.push(escapeHtml(p.phone));
-            return `<div class="phone">${parts.join(" · ")}</div>`;
+            const cls = participating[i] ? "phone participating" : "phone";
+            return `<div class="${cls}">${parts.join(" · ")}</div>`;
           })
           .join("");
         return `<td><strong>${escapeHtml(a.familyName)}</strong>${parents}</td>`;

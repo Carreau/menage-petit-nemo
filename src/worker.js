@@ -149,6 +149,7 @@ async function handleApi(request, env, url) {
         saturdayId: Number(body.saturdayId),
         slot: Number(body.slot),
         familyId: Number(body.familyId),
+        participating: body.participating,
       },
       { isAdmin },
     );
@@ -250,6 +251,7 @@ function statusForError(code) {
     case "saturday_past": return 409;
     case "family_already_booked": return 409;
     case "wrong_local": return 409;
+    case "no_parent_participating": return 400;
     case "not_your_slot": return 403;
     case "no_such_saturday":
     case "no_such_family":
