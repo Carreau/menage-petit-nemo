@@ -179,7 +179,7 @@ main {
 
 .families {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 10px;
 }
 .family {
@@ -205,9 +205,11 @@ main {
 .family .tally {
   font-variant-numeric: tabular-nums;
   font-size: 14px;
-  padding: 3px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
   background: #e9eef7;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .family.done   .tally { background: #d9f1e3; color: var(--green); }
 .family.partial .tally { background: #fbeecb; color: var(--yellow); }
