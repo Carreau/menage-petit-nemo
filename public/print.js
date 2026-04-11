@@ -89,23 +89,27 @@ function render() {
       }
       // Privacy: the printed sheet is meant to be posted at the daycare,
       // so we keep family and parent names but deliberately omit phones.
-      const slot = (a) => {
-        if (!a) return `<span class="empty">—</span>`;
+      const slotCell = (a) => {
+        if (!a) return `<td class="slot-empty"></td>`;
         const famRec = state.families.find((f) => f.id === a.familyId);
         const parents = (famRec?.parents || [])
           .filter((p) => p && p.name)
           .map((p) => `<div class="phone">${escapeHtml(p.name)}</div>`)
           .join("");
-        return `<strong>${escapeHtml(a.familyName)}</strong>${parents}`;
+        return `<td><strong>${escapeHtml(a.familyName)}</strong>${parents}</td>`;
       };
+      // The form is meant to be filled in by hand at the daycare entrance.
+      // Rows where at least one slot is empty get an extra-tall class so
+      // there's enough room to write a name and phone number with a pen.
+      const hasEmpty = !s.slots[0] || !s.slots[1];
       return `
-        <tr>
-          <td>
+        <tr class="${hasEmpty ? "has-empty" : ""}">
+          <td class="date-cell">
             ${formatDate(s.date)}
             ${s.note ? `<div class="note">${escapeHtml(s.note)}</div>` : ""}
           </td>
-          <td>${slot(s.slots[0])}</td>
-          <td>${slot(s.slots[1])}</td>
+          ${slotCell(s.slots[0])}
+          ${slotCell(s.slots[1])}
         </tr>`;
     })
     .join("");
@@ -118,6 +122,11 @@ function render() {
         <div class="print-range">${rangeLine}</div>
       </div>
       <table class="print-table">
+        <colgroup>
+          <col class="col-date" />
+          <col />
+          <col />
+        </colgroup>
         <thead>
           <tr>
             <th data-i18n="print_col_date"></th>
