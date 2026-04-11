@@ -11,10 +11,9 @@ binding = "ASSETS"
 # Create the database once with:  npm run db:create
 # then copy the returned database_id below and run:  npm run db:migrate
 [[d1_databases]]
-binding = "DB"
+binding = "menage_petit_nemo"
 database_name = "menage-petit-nemo"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
-migrations_dir = "migrations"
+database_id = "39f54a12-59e6-4f0c-8d42-444a9601de26"
 
 # Secrets (set via `wrangler secret put <NAME>`):
 #   FAMILY_PASSWORD  - shared password handed out to parents
