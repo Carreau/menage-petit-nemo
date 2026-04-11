@@ -283,10 +283,13 @@ function wireFamiliesTab() {
     URL.revokeObjectURL(url);
   });
   const importInput = document.getElementById("importFamiliesFile");
-  document.getElementById("importFamiliesBtn").addEventListener("click", () => {
-    if (!confirm(t("import_families_help"))) return;
-    importInput.click();
-  });
+  const importBtn = document.getElementById("importFamiliesBtn");
+  // Some browsers (notably Safari) drop the user activation if we open
+  // a confirm() dialog between the click and the .click() on the hidden
+  // file input, so the picker never shows up. Go straight to the file
+  // picker — the picker itself is the cancel/confirm.
+  importBtn.title = t("import_families_help");
+  importBtn.addEventListener("click", () => importInput.click());
   importInput.addEventListener("change", async () => {
     const file = importInput.files?.[0];
     importInput.value = "";
