@@ -103,6 +103,13 @@ export const STRINGS = {
     danger_clear_saturdays: "Effacer tous les samedis",
     danger_clear_saturdays_confirm:
       "Supprimer tous les samedis et toutes leurs affectations ? Les familles sont conservées.",
+    local_data_heading: "Données locales",
+    local_data_help:
+      "Préférences enregistrées sur cet appareil uniquement (langue choisie et famille sélectionnée). N'affecte pas les autres utilisateurs.",
+    clear_local: "Effacer les données locales",
+    clear_local_confirm:
+      "Effacer les préférences enregistrées sur cet appareil (langue, famille sélectionnée) ?",
+    clear_local_done: "Données locales effacées.",
     overview_export: "Exporter (JSON)",
     print_heading: "Impression / PDF",
     print_help:
@@ -218,6 +225,13 @@ export const STRINGS = {
     danger_clear_saturdays: "Clear all Saturdays",
     danger_clear_saturdays_confirm:
       "Delete every Saturday and all their assignments? Families are kept.",
+    local_data_heading: "Local data",
+    local_data_help:
+      "Preferences stored on this device only (chosen language and selected family). Does not affect other users.",
+    clear_local: "Clear local data",
+    clear_local_confirm:
+      "Clear preferences stored on this device (language, selected family)?",
+    clear_local_done: "Local data cleared.",
     overview_export: "Export (JSON)",
     print_heading: "Print / PDF",
     print_help:
