@@ -8,9 +8,10 @@ const logoutBtn = document.getElementById("logoutBtn");
 
 let state = null;
 let tab = "families";
-// IDs of family rows currently in edit mode. Defaults to view-only so
-// admins don't accidentally type into a row and forget to save.
-const editingFamilies = new Set();
+// Id of the family currently in edit mode (null when nothing is being
+// edited). Only one family at a time so the admin can't open multiple
+// forms and forget which one to save.
+let editingFamilyId = null;
 
 function applyI18n() {
   document.documentElement.lang = getLang();
@@ -156,7 +157,7 @@ function renderAvatar(name, size = "md") {
 function renderFamiliesTab() {
   const cards = state.families
     .map((f) =>
-      editingFamilies.has(f.id) ? renderFamilyEditCard(f) : renderFamilyViewCard(f),
+      editingFamilyId === f.id ? renderFamilyEditCard(f) : renderFamilyViewCard(f),
     )
     .join("");
   return `
@@ -343,7 +344,12 @@ function wireFamiliesTab() {
   for (const card of document.querySelectorAll(".family-card-view[data-id]")) {
     const id = Number(card.dataset.id);
     card.querySelector(".edit").addEventListener("click", () => {
-      editingFamilies.add(id);
+      if (editingFamilyId !== null && editingFamilyId !== id) {
+        const other = state.families.find((f) => f.id === editingFamilyId);
+        alert(t("save_other_first", other?.name || ""));
+        return;
+      }
+      editingFamilyId = id;
       render();
     });
     card.querySelector(".del").addEventListener("click", async () => {
@@ -351,7 +357,7 @@ function wireFamiliesTab() {
       if (!confirm(t("confirm_delete_family", fam?.name || ""))) return;
       const res = await api(`/api/admin/families/${id}`, { method: "DELETE" });
       if (!res.ok) return alert(t("err_generic"));
-      editingFamilies.delete(id);
+      if (editingFamilyId === id) editingFamilyId = null;
       await loadState();
     });
   }
@@ -366,7 +372,7 @@ function wireFamiliesTab() {
         i.placeholder = t("parent_phone");
     });
     card.querySelector(".cancel").addEventListener("click", () => {
-      editingFamilies.delete(id);
+      editingFamilyId = null;
       render();
     });
     card.querySelector(".save").addEventListener("click", async () => {
@@ -388,7 +394,7 @@ function wireFamiliesTab() {
         body: JSON.stringify({ name, quota, active, parents }),
       });
       if (!res.ok) return alert(t("err_generic"));
-      editingFamilies.delete(id);
+      editingFamilyId = null;
       await loadState();
     });
   }

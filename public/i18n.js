@@ -90,6 +90,8 @@ export const STRINGS = {
     save_all: "Tout enregistrer",
     saving: "Enregistrement…",
     edit: "Modifier",
+    save_other_first: (name) =>
+      `Veuillez d'abord enregistrer ou annuler les modifications de « ${name} ».`,
     inactive: "Inactive",
     last_modified: "Dernière modification",
     last_modified_never: "Jamais modifié",
@@ -226,6 +228,8 @@ export const STRINGS = {
     save_all: "Save all",
     saving: "Saving…",
     edit: "Edit",
+    save_other_first: (name) =>
+      `Please save or cancel the changes to "${name}" first.`,
     inactive: "Inactive",
     last_modified: "Last modified",
     last_modified_never: "Never modified",
