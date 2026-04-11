@@ -299,8 +299,9 @@ export const STRINGS = {
 export function getLang() {
   const saved = localStorage.getItem("mnp_lang");
   if (saved === "fr" || saved === "en") return saved;
-  const nav = (navigator.language || "fr").toLowerCase();
-  return nav.startsWith("en") ? "en" : "fr";
+  // Default to French — this is a French daycare. The header toggle
+  // still lets anyone switch to English explicitly.
+  return "fr";
 }
 
 export function setLang(l) {
