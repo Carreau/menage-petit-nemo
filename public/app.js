@@ -272,91 +272,10 @@ function render() {
       confirmRelease(JSON.parse(el.dataset.release)),
     );
   }
-  for (const el of document.querySelectorAll("[data-ics]")) {
-    el.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      const { date } = JSON.parse(el.dataset.ics);
-      downloadIcs(date);
-    });
-  }
-}
-
-// ---- Calendar (.ics) generation ----
-//
-// Produces a tiny VCALENDAR with two all-day events:
-//   - Cleaning day (the Saturday itself)
-//   - Key pickup reminder on the Friday before
-// Both SUMMARY strings come from i18n so the event text matches the UI.
-// Downloaded client-side — no server round trip.
-
-function downloadIcs(satDate) {
-  const ics = buildIcs(satDate);
-  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `menage-petit-nemo-${satDate}.ics`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-function buildIcs(satIso) {
-  const satCompact = satIso.replace(/-/g, "");
-  const friCompact = addDays(satIso, -1).replace(/-/g, "");
-  const dtstamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
-  const uidBase = `menage-petit-nemo-${satCompact}`;
-
-  // Floating local time (no TZID, no trailing Z). The calendar app renders
-  // these in the viewer's local timezone, which is what parents want since
-  // the cleaning happens at the daycare in France.
-  const cleaningStart = `${satCompact}T090000`;
-  const cleaningEnd   = `${satCompact}T120000`;
-  const keysStart     = `${friCompact}T160000`;
-  const keysEnd       = `${friCompact}T180000`;
-
-  const cleaningSummary = icsEscape(t("ics_summary_cleaning"));
-  const keysSummary = icsEscape(t("ics_summary_keys"));
-
-  const lines = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//menage-petit-nemo//FR",
-    "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH",
-    "BEGIN:VEVENT",
-    `UID:${uidBase}-cleaning@menage-petit-nemo`,
-    `DTSTAMP:${dtstamp}`,
-    `DTSTART:${cleaningStart}`,
-    `DTEND:${cleaningEnd}`,
-    `SUMMARY:${cleaningSummary}`,
-    "END:VEVENT",
-    "BEGIN:VEVENT",
-    `UID:${uidBase}-keys@menage-petit-nemo`,
-    `DTSTAMP:${dtstamp}`,
-    `DTSTART:${keysStart}`,
-    `DTEND:${keysEnd}`,
-    `SUMMARY:${keysSummary}`,
-    "END:VEVENT",
-    "END:VCALENDAR",
-  ];
-  // RFC 5545 mandates CRLF line endings.
-  return lines.join("\r\n") + "\r\n";
-}
-
-function addDays(iso, n) {
-  const d = new Date(`${iso}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-}
-
-function icsEscape(s) {
-  return String(s ?? "")
-    .replace(/\\/g, "\\\\")
-    .replace(/;/g, "\\;")
-    .replace(/,/g, "\\,")
-    .replace(/\n/g, "\\n");
+  // Calendar "Add to calendar" is a plain <a href="/api/ics?...">.
+  // The Worker serves it with Content-Type: text/calendar so mobile
+  // browsers hand it off to the OS calendar handler directly instead
+  // of dumping a blob into Downloads.
 }
 
 function renderNextCleaning(sat, showPhones) {
@@ -431,8 +350,7 @@ function renderSlot(sat, slot, { showPhones } = { showPhones: false }) {
            data-release='${JSON.stringify({ id: a.assignmentId, name: a.familyName, familyId: a.familyId })}'>×</button>`
       : "";
     const icsBtn = canIcs
-      ? `<button class="ics-btn"
-           data-ics='${JSON.stringify({ date: sat.date })}'>📅 ${t("add_to_calendar")}</button>`
+      ? `<a class="ics-btn" href="/api/ics?date=${encodeURIComponent(sat.date)}&lang=${getLang()}">📅 ${t("add_to_calendar")}</a>`
       : "";
     const famRec = state.families.find((f) => f.id === a.familyId);
     const parentsHtml = renderParentLines(famRec?.parents || [], { showPhone: showPhones });

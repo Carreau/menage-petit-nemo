@@ -24,6 +24,7 @@ import {
   resetAssignments,
   clearAllSaturdays,
 } from "./db.js";
+import { buildIcs, isIsoDate } from "./ics.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -101,6 +102,26 @@ async function handleApi(request, env, url) {
   }
 
   // --- Family-cookie endpoints ---
+
+  // Calendar file for a given Saturday. Served with Content-Type
+  // text/calendar so mobile browsers hand it off to the OS calendar
+  // handler (iOS Calendar, Google Calendar, etc.) instead of dumping
+  // a blob into Downloads like the old client-side generator did.
+  if (pathname === "/api/ics" && method === "GET") {
+    if (!(await hasFamilyAccess(request, env))) return json({ error: "unauthorized" }, 401);
+    const date = url.searchParams.get("date");
+    if (!isIsoDate(date)) return json({ error: "bad_date" }, 400);
+    const lang = url.searchParams.get("lang") === "en" ? "en" : "fr";
+    const body = buildIcs(date, lang);
+    return new Response(body, {
+      status: 200,
+      headers: {
+        "content-type": "text/calendar; charset=utf-8",
+        "content-disposition": `inline; filename="menage-petit-nemo-${date}.ics"`,
+        "cache-control": "no-store",
+      },
+    });
+  }
 
   if (pathname === "/api/state" && method === "GET") {
     if (!(await hasFamilyAccess(request, env))) return json({ error: "unauthorized" }, 401);

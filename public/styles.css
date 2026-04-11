@@ -278,6 +278,7 @@ main {
 }
 .saturday .slot.filled .slot-phone:hover { color: var(--accent); }
 .saturday .slot.filled .ics-btn {
+  display: block;
   font: inherit;
   cursor: pointer;
   border: 1px solid var(--line);
@@ -287,10 +288,12 @@ main {
   border-radius: 6px;
   text-align: center;
   font-size: 13px;
+  text-decoration: none;
 }
 .saturday .slot.filled .ics-btn:hover {
   border-color: var(--accent);
   background: #eef4ff;
+  text-decoration: none;
 }
 
 @media (max-width: 720px) {
