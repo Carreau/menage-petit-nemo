@@ -19,3 +19,18 @@ database_id = "39f54a12-59e6-4f0c-8d42-444a9601de26"
 #   FAMILY_PASSWORD  - shared password handed out to parents
 #   ADMIN_PASSWORD   - password for the /admin panel
 #   COOKIE_SECRET    - random 32+ character string used to sign cookies
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
