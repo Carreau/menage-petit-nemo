@@ -4,8 +4,21 @@ function todayIsoUtc() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Stamp the config table whenever the visible schedule or families list
+// is mutated, so admins can see "last modified" at a glance.
+async function bumpLastModified(db) {
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      "INSERT INTO config (key, value) VALUES ('last_modified', ?) " +
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    )
+    .bind(now)
+    .run();
+}
+
 export async function getState(db) {
-  const [familiesRes, saturdaysRes, assignmentsRes] = await Promise.all([
+  const [familiesRes, saturdaysRes, assignmentsRes, lastModRes] = await Promise.all([
     db.prepare(`
       SELECT id, name, quota, active,
              parent1_name, parent1_phone,
@@ -19,7 +32,9 @@ export async function getState(db) {
         FROM assignments a
         JOIN families f ON f.id = a.family_id
     `).all(),
+    db.prepare("SELECT value FROM config WHERE key = 'last_modified'").first(),
   ]);
+  const lastModified = lastModRes?.value || null;
 
   const today = todayIsoUtc();
 
@@ -58,7 +73,7 @@ export async function getState(db) {
     if (fam) fam.used += 1;
   }
 
-  return { families, saturdays, today };
+  return { families, saturdays, today, lastModified };
 }
 
 export async function claimSlot(db, { saturdayId, slot, familyId }, { isAdmin = false } = {}) {
@@ -96,6 +111,7 @@ export async function claimSlot(db, { saturdayId, slot, familyId }, { isAdmin = 
       )
       .bind(saturdayId, familyId, slot)
       .run();
+    await bumpLastModified(db);
     return { ok: true, id: res.meta?.last_row_id };
   } catch (err) {
     const msg = String(err && err.message || err);
@@ -127,6 +143,7 @@ export async function releaseSlot(db, assignmentId, { familyId, isAdmin = false 
   if (!isAdmin && row.date < todayIsoUtc()) return { error: "saturday_past" };
   if (!isAdmin && Number(familyId) !== row.family_id) return { error: "not_your_slot" };
   await db.prepare("DELETE FROM assignments WHERE id = ?").bind(assignmentId).run();
+  await bumpLastModified(db);
   return { ok: true };
 }
 
@@ -158,7 +175,27 @@ export async function createFamily(db, { name, quota, parents }) {
       trimOrNull(p2.phone),
     )
     .run();
+  await bumpLastModified(db);
   return { ok: true, id: res.meta?.last_row_id };
+}
+
+export async function bulkCreateFamilies(db, families) {
+  if (!Array.isArray(families) || !families.length) {
+    return { error: "empty" };
+  }
+  let count = 0;
+  for (const f of families) {
+    const r = await createFamily(db, {
+      name: f?.name,
+      quota: f?.quota,
+      parents: Array.isArray(f?.parents) ? f.parents : [],
+    });
+    if (r.ok) count += 1;
+  }
+  // createFamily already bumps, but bump once more to be sure if all
+  // entries were skipped (no-op).
+  await bumpLastModified(db);
+  return { ok: true, count };
 }
 
 export async function updateFamily(db, id, { name, quota, active, parents }) {
@@ -193,6 +230,7 @@ export async function updateFamily(db, id, { name, quota, active, parents }) {
   if (!sets.length) return { ok: true };
   binds.push(id);
   await db.prepare(`UPDATE families SET ${sets.join(", ")} WHERE id = ?`).bind(...binds).run();
+  await bumpLastModified(db);
   return { ok: true };
 }
 
@@ -202,6 +240,7 @@ export async function deleteFamily(db, id) {
     db.prepare("DELETE FROM assignments WHERE family_id = ?").bind(id),
     db.prepare("DELETE FROM families WHERE id = ?").bind(id),
   ]);
+  await bumpLastModified(db);
   return { ok: true };
 }
 
@@ -230,6 +269,7 @@ export async function createSaturdaysInRange(db, { startDate, endDate, skipDates
     cursor.setUTCDate(cursor.getUTCDate() + 7);
   }
   if (stmts.length) await db.batch(stmts);
+  await bumpLastModified(db);
   return { ok: true, count: stmts.length };
 }
 
@@ -247,6 +287,7 @@ export async function updateSaturday(db, id, { note, closed }) {
   if (!sets.length) return { ok: true };
   binds.push(id);
   await db.prepare(`UPDATE saturdays SET ${sets.join(", ")} WHERE id = ?`).bind(...binds).run();
+  await bumpLastModified(db);
   return { ok: true };
 }
 
@@ -255,11 +296,13 @@ export async function deleteSaturday(db, id) {
     db.prepare("DELETE FROM assignments WHERE saturday_id = ?").bind(id),
     db.prepare("DELETE FROM saturdays WHERE id = ?").bind(id),
   ]);
+  await bumpLastModified(db);
   return { ok: true };
 }
 
 export async function resetAssignments(db) {
   await db.prepare("DELETE FROM assignments").run();
+  await bumpLastModified(db);
   return { ok: true };
 }
 
@@ -269,6 +312,7 @@ export async function clearAllSaturdays(db) {
     db.prepare("DELETE FROM assignments"),
     db.prepare("DELETE FROM saturdays"),
   ]);
+  await bumpLastModified(db);
   return { ok: true };
 }
 

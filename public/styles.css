@@ -441,6 +441,16 @@ th { color: var(--muted); font-weight: 500; font-size: 13px; }
 .avatar-lg { width: 48px; height: 48px; font-size: 16px; }
 
 /* ---- Admin family cards ---- */
+.family-list-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+.last-modified {
+  color: var(--muted);
+  font-size: 13px;
+}
 .family-list { display: flex; flex-direction: column; gap: 12px; }
 .family-card {
   background: var(--card);
@@ -491,6 +501,56 @@ th { color: var(--muted); font-weight: 500; font-size: 13px; }
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+/* View-mode card (default state) */
+.family-card-view { gap: 8px; }
+.family-card-view.is-inactive { opacity: 0.6; }
+.family-view-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.family-view-title { flex: 1 1 auto; min-width: 0; }
+.family-view-name {
+  font-weight: 600;
+  font-size: 16px;
+}
+.family-view-meta {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.family-view-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.family-view-parents {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 48px; /* line up with the avatar's right edge */
+}
+.family-view-parent {
+  font-size: 13px;
+  color: var(--ink);
+}
+.family-view-parent .lbl {
+  color: var(--muted);
+  font-size: 12px;
+  margin-right: 4px;
+}
+.inactive-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #fbeae8;
+  color: var(--red);
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 6px;
+  vertical-align: middle;
 }
 
 /* ---- Print view ---- */
