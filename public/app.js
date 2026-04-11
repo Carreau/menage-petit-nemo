@@ -107,6 +107,16 @@ async function loadState() {
   }
   state = res.data;
 
+  // Fresh deploy: no families yet. Don't open the picker (it would be
+  // empty and trap the page) — show an empty state with a link to the
+  // admin panel so the admin can add the first families.
+  const hasFamilies = state.families.some((f) => f.active);
+  if (!hasFamilies) {
+    updateHeader();
+    renderEmptyState();
+    return;
+  }
+
   // If no stored family, or the stored one no longer exists, prompt.
   if (!currentFamily()) {
     updateHeader();
@@ -117,6 +127,17 @@ async function loadState() {
 
   updateHeader();
   render();
+}
+
+function renderEmptyState() {
+  root.innerHTML = `
+    <section class="card empty-state">
+      <h2 data-i18n="empty_no_families_title"></h2>
+      <p data-i18n="empty_no_families_help"></p>
+      <a class="empty-state-cta" href="/admin.html" data-i18n="go_to_admin"></a>
+    </section>
+  `;
+  applyI18n();
 }
 
 function renderLogin() {
