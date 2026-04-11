@@ -491,40 +491,85 @@ function openFamilyPicker({ allowCancel }) {
   const backdrop = document.createElement("div");
   backdrop.className = "modal-backdrop";
   backdrop.innerHTML = `
-    <div class="modal">
+    <div class="modal modal-wide">
       <h3 data-i18n="select_family_title"></h3>
       <p data-i18n="select_family_help"></p>
-      <select id="pick">
-        ${eligible
-          .map(
-            (f) =>
-              `<option value="${f.id}" ${f.id === currentId ? "selected" : ""}>${escapeHtml(f.name)}</option>`,
-          )
-          .join("")}
-      </select>
+      <input type="text" id="famSearch" class="family-search" autofocus />
+      <div class="family-grid" id="famGrid"></div>
       <div class="actions">
         ${allowCancel ? '<button data-act="cancel" data-i18n="cancel"></button>' : ""}
-        <button class="primary" data-act="ok" data-i18n="confirm"></button>
       </div>
     </div>
   `;
   document.body.appendChild(backdrop);
   applyI18n();
+
+  const search = backdrop.querySelector("#famSearch");
+  search.placeholder = t("search_placeholder");
+  const grid = backdrop.querySelector("#famGrid");
+
   const close = () => backdrop.remove();
+  const select = (id) => {
+    setCurrentFamilyId(id);
+    close();
+    updateHeader();
+    render();
+  };
+
+  function renderGrid(query) {
+    const q = (query || "").toLowerCase().trim();
+    const filtered = q
+      ? eligible.filter((f) => {
+          if (f.name.toLowerCase().includes(q)) return true;
+          for (const p of f.parents || []) {
+            if (p?.name && p.name.toLowerCase().includes(q)) return true;
+          }
+          return false;
+        })
+      : eligible;
+    if (!filtered.length) {
+      grid.innerHTML = `<div class="family-grid-empty">${t("no_match")}</div>`;
+      return;
+    }
+    grid.innerHTML = filtered
+      .map((f) => {
+        const isCurrent = f.id === currentId;
+        const parentNames = (f.parents || [])
+          .filter((p) => p && p.name)
+          .map((p) => escapeHtml(p.name))
+          .join(" · ");
+        return `
+          <button type="button" class="family-pick${isCurrent ? " current" : ""}" data-id="${f.id}">
+            <span class="family-pick-name">${escapeHtml(f.name)}</span>
+            ${parentNames ? `<span class="family-pick-parents">${parentNames}</span>` : ""}
+          </button>`;
+      })
+      .join("");
+    for (const btn of grid.querySelectorAll(".family-pick")) {
+      btn.addEventListener("click", () => select(Number(btn.dataset.id)));
+    }
+  }
+
+  search.addEventListener("input", (e) => renderGrid(e.target.value));
+  // Pressing Enter on a single-result search picks it.
+  search.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    const buttons = grid.querySelectorAll(".family-pick");
+    if (buttons.length === 1) {
+      e.preventDefault();
+      select(Number(buttons[0].dataset.id));
+    }
+  });
+  renderGrid("");
+  // Without setTimeout the autofocus on a freshly-attached input is unreliable.
+  setTimeout(() => search.focus(), 0);
+
   if (allowCancel) {
     backdrop.addEventListener("click", (e) => {
       if (e.target === backdrop) close();
     });
     backdrop.querySelector('[data-act="cancel"]').addEventListener("click", close);
   }
-  backdrop.querySelector('[data-act="ok"]').addEventListener("click", () => {
-    const id = Number(backdrop.querySelector("#pick").value);
-    if (!id) return;
-    setCurrentFamilyId(id);
-    close();
-    updateHeader();
-    render();
-  });
 }
 
 function confirmClaim({ saturdayId, slot, date, past }) {
