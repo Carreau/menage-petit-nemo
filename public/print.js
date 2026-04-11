@@ -67,15 +67,6 @@ function render() {
   if (startDate) saturdays = saturdays.filter((s) => s.date >= startDate);
   if (endDate) saturdays = saturdays.filter((s) => s.date <= endDate);
 
-  const rangeLine =
-    startDate && endDate
-      ? `${formatDate(startDate)} — ${formatDate(endDate)}`
-      : startDate
-      ? `≥ ${formatDate(startDate)}`
-      : endDate
-      ? `≤ ${formatDate(endDate)}`
-      : t("print_all_range");
-
   const rows = saturdays
     .map((s) => {
       if (s.closed) {
@@ -116,11 +107,6 @@ function render() {
 
   root.innerHTML = `
     <section class="card print-card">
-      <div class="print-header">
-        <h2 data-i18n="app_title"></h2>
-        <div class="print-sub" data-i18n="schedule_heading"></div>
-        <div class="print-range">${rangeLine}</div>
-      </div>
       <table class="print-table">
         <colgroup>
           <col class="col-date" />
