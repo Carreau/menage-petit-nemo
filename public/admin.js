@@ -543,10 +543,35 @@ function renderOverviewTab() {
         <tbody>${rows}</tbody>
       </table>
     </div>
+    <div class="card">
+      <h2 data-i18n="system_info_heading"></h2>
+      <p style="color:var(--muted)" data-i18n="system_info_help"></p>
+      <div class="row" style="justify-content:flex-end">
+        <button id="healthBtn" data-i18n="system_info_check"></button>
+      </div>
+      <pre id="healthOut" class="health-out hidden"></pre>
+    </div>
   `;
 }
 
 function wireOverviewTab() {
+  document.getElementById("healthBtn").addEventListener("click", async () => {
+    const out = document.getElementById("healthOut");
+    out.classList.remove("hidden");
+    out.textContent = "…";
+    try {
+      const res = await fetch("/api/health");
+      const data = await res.json().catch(() => ({}));
+      const pretty = JSON.stringify(data, null, 2);
+      out.textContent = `HTTP ${res.status}\n\n${pretty}`;
+      out.classList.toggle("health-ok", !!data.ok);
+      out.classList.toggle("health-bad", !data.ok);
+    } catch (err) {
+      out.textContent = `Network error: ${err?.message || err}`;
+      out.classList.remove("health-ok");
+      out.classList.add("health-bad");
+    }
+  });
   document.getElementById("openPrintBtn").addEventListener("click", () => {
     const start = document.getElementById("printStart").value;
     const end = document.getElementById("printEnd").value;

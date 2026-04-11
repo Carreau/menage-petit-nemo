@@ -99,6 +99,10 @@ export const STRINGS = {
     inactive: "Inactive",
     last_modified: "Dernière modification",
     last_modified_never: "Jamais modifié",
+    system_info_heading: "Informations système",
+    system_info_help:
+      "Vérifie la présence des bindings (D1, assets), des secrets (mot de passe familles/admin, clé de cookie) et des tables de la base. Pratique pour diagnostiquer un déploiement cassé.",
+    system_info_check: "Vérifier le système",
     import_families: "Importer",
     export_families: "Exporter",
     import_families_help:
@@ -241,6 +245,10 @@ export const STRINGS = {
     inactive: "Inactive",
     last_modified: "Last modified",
     last_modified_never: "Never modified",
+    system_info_heading: "System info",
+    system_info_help:
+      "Checks that bindings (D1, assets) and secrets (family/admin passwords, cookie key) are wired and the DB tables exist. Handy for diagnosing a broken deploy.",
+    system_info_check: "Check system",
     import_families: "Import",
     export_families: "Export",
     import_families_help:

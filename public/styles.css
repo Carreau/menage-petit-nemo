@@ -422,6 +422,25 @@ th { color: var(--muted); font-weight: 500; font-size: 13px; }
 
 .hidden { display: none !important; }
 
+/* ---- System info output (admin Overview → Check system) ---- */
+.health-out {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #f7f8fb;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink);
+  max-height: 400px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.health-out.health-ok { border-color: #c5e6d4; background: #eef9f2; }
+.health-out.health-bad { border-color: #f0c3bf; background: #fbf0ee; }
+
 /* Empty state shown on the main page when no families exist yet. */
 .empty-state {
   text-align: center;

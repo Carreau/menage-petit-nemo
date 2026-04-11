@@ -510,7 +510,7 @@ function openAdminClaimPicker({ saturdayId, slot, date }) {
       await loadState();
       return;
     }
-    backdrop.querySelector("#modalErr").textContent = errorMessage(res.data?.error);
+    backdrop.querySelector("#modalErr").textContent = errorMessage(res.data?.error, res.data);
     if (res.data?.error === "slot_taken") await loadState();
   });
 }
@@ -653,7 +653,7 @@ function confirmClaim({ saturdayId, slot, date, past }) {
       return;
     }
     const err = backdrop.querySelector("#modalErr");
-    err.textContent = errorMessage(res.data?.error);
+    err.textContent = errorMessage(res.data?.error, res.data);
     if (res.data?.error === "slot_taken") await loadState();
   });
 }
@@ -665,18 +665,23 @@ async function confirmRelease({ id, name, familyId }) {
     body: JSON.stringify({ assignmentId: id, familyId }),
   });
   if (res.ok) await loadState();
-  else alert(errorMessage(res.data?.error));
+  else alert(errorMessage(res.data?.error, res.data));
 }
 
-function errorMessage(code) {
+function errorMessage(code, data) {
   switch (code) {
     case "slot_taken":            return t("err_slot_taken");
     case "saturday_closed":       return t("err_saturday_closed");
     case "saturday_past":         return t("err_saturday_past");
     case "family_already_booked": return t("err_family_already_booked");
     case "not_your_slot":         return t("err_not_your_slot");
-    default:                      return t("err_generic");
   }
+  // Fall through: if the server sent an internal_error with a message,
+  // include it as a technical suffix so the admin can file it upstream.
+  if (code === "internal_error" && data?.message) {
+    return `${t("err_generic")} (${data.message})`;
+  }
+  return t("err_generic");
 }
 
 // ---- Auto-generated avatars ----
