@@ -57,7 +57,7 @@ button.link {
 }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-input[type="text"], input[type="password"], input[type="number"], input[type="date"], textarea, select {
+input[type="text"], input[type="password"], input[type="number"], input[type="date"], input[type="tel"], textarea, select {
   font: inherit;
   border: 1px solid var(--line);
   border-radius: 8px;
